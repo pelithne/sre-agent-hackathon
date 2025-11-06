@@ -427,8 +427,7 @@ output postgresDatabaseName string = postgresDatabase.name
 @description('Application Insights name')
 output appInsightsName string = appInsights.name
 
-@description('Application Insights connection string (sensitive)')
-@secure()
+@description('Application Insights connection string')
 output appInsightsConnectionString string = appInsights.properties.ConnectionString
 
 @description('Log Analytics workspace ID')

@@ -1,0 +1,522 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.30.23.60470",
+      "templateHash": "1078937255354219906"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "The primary location for all resources"
+      }
+    },
+    "environmentName": {
+      "type": "string",
+      "defaultValue": "dev",
+      "minLength": 2,
+      "maxLength": 10,
+      "metadata": {
+        "description": "Environment name (e.g., dev, staging, prod)"
+      }
+    },
+    "baseName": {
+      "type": "string",
+      "defaultValue": "sreagent",
+      "minLength": 3,
+      "maxLength": 15,
+      "metadata": {
+        "description": "Base name for resources (used to generate unique resource names)"
+      }
+    },
+    "postgresAdminUsername": {
+      "type": "string",
+      "defaultValue": "sqladmin",
+      "minLength": 1,
+      "metadata": {
+        "description": "Administrator username for PostgreSQL"
+      }
+    },
+    "postgresAdminPassword": {
+      "type": "securestring",
+      "minLength": 12,
+      "metadata": {
+        "description": "Administrator password for PostgreSQL"
+      }
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {
+        "Environment": "[parameters('environmentName')]",
+        "Project": "SRE-Agent-Hackathon",
+        "ManagedBy": "Bicep"
+      },
+      "metadata": {
+        "description": "Tags to apply to all resources"
+      }
+    }
+  },
+  "variables": {
+    "uniqueSuffix": "[uniqueString(resourceGroup().id)]",
+    "namingPrefix": "[format('{0}-{1}', parameters('baseName'), parameters('environmentName'))]",
+    "vnetName": "[format('{0}-vnet', variables('namingPrefix'))]",
+    "logAnalyticsName": "[format('{0}-logs-{1}', variables('namingPrefix'), variables('uniqueSuffix'))]",
+    "appInsightsName": "[format('{0}-ai-{1}', variables('namingPrefix'), variables('uniqueSuffix'))]",
+    "containerAppEnvName": "[format('{0}-cae-{1}', variables('namingPrefix'), variables('uniqueSuffix'))]",
+    "containerAppName": "[format('{0}-api', variables('namingPrefix'))]",
+    "apimName": "[format('{0}-apim-{1}', variables('namingPrefix'), variables('uniqueSuffix'))]",
+    "postgresServerName": "[format('{0}-psql-{1}', variables('namingPrefix'), variables('uniqueSuffix'))]",
+    "managedIdentityName": "[format('{0}-identity', variables('namingPrefix'))]",
+    "vnetAddressPrefix": "10.0.0.0/16",
+    "containerAppsSubnetPrefix": "10.0.0.0/23",
+    "postgresSubnetPrefix": "10.0.2.0/24",
+    "apimSubnetPrefix": "10.0.3.0/24"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+      "apiVersion": "2023-01-31",
+      "name": "[variables('managedIdentityName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]"
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2023-11-01",
+      "name": "[variables('vnetName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('vnetAddressPrefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "container-apps-subnet",
+            "properties": {
+              "addressPrefix": "[variables('containerAppsSubnetPrefix')]",
+              "delegations": [
+                {
+                  "name": "Microsoft.App.environments",
+                  "properties": {
+                    "serviceName": "Microsoft.App/environments"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "postgres-subnet",
+            "properties": {
+              "addressPrefix": "[variables('postgresSubnetPrefix')]",
+              "delegations": [
+                {
+                  "name": "Microsoft.DBforPostgreSQL.flexibleServers",
+                  "properties": {
+                    "serviceName": "Microsoft.DBforPostgreSQL/flexibleServers"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "apim-subnet",
+            "properties": {
+              "addressPrefix": "[variables('apimSubnetPrefix')]"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2023-09-01",
+      "name": "[variables('logAnalyticsName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "properties": {
+        "sku": {
+          "name": "PerGB2018"
+        },
+        "retentionInDays": 30,
+        "features": {
+          "enableLogAccessUsingOnlyResourcePermissions": true
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Insights/components",
+      "apiVersion": "2020-02-02",
+      "name": "[variables('appInsightsName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "kind": "web",
+      "properties": {
+        "Application_Type": "web",
+        "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsName'))]",
+        "RetentionInDays": 30
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.App/managedEnvironments",
+      "apiVersion": "2024-03-01",
+      "name": "[variables('containerAppEnvName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "properties": {
+        "appLogsConfiguration": {
+          "destination": "log-analytics",
+          "logAnalyticsConfiguration": {
+            "customerId": "[reference(resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsName')), '2023-09-01').customerId]",
+            "sharedKey": "[listKeys(resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsName')), '2023-09-01').primarySharedKey]"
+          }
+        },
+        "vnetConfiguration": {
+          "infrastructureSubnetId": "[reference(resourceId('Microsoft.Network/virtualNetworks', variables('vnetName')), '2023-11-01').subnets[0].id]"
+        },
+        "zoneRedundant": false
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.DBforPostgreSQL/flexibleServers",
+      "apiVersion": "2023-12-01-preview",
+      "name": "[variables('postgresServerName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "sku": {
+        "name": "Standard_B1ms",
+        "tier": "Burstable"
+      },
+      "properties": {
+        "administratorLogin": "[parameters('postgresAdminUsername')]",
+        "administratorLoginPassword": "[parameters('postgresAdminPassword')]",
+        "version": "16",
+        "storage": {
+          "storageSizeGB": 32,
+          "autoGrow": "Enabled"
+        },
+        "backup": {
+          "backupRetentionDays": 7,
+          "geoRedundantBackup": "Disabled"
+        },
+        "highAvailability": {
+          "mode": "Disabled"
+        },
+        "network": {
+          "delegatedSubnetResourceId": "[reference(resourceId('Microsoft.Network/virtualNetworks', variables('vnetName')), '2023-11-01').subnets[1].id]",
+          "privateDnsZoneArmResourceId": "[resourceId('Microsoft.Network/privateDnsZones', 'private.postgres.database.azure.com')]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/privateDnsZones', 'private.postgres.database.azure.com')]",
+        "[resourceId('Microsoft.Network/privateDnsZones/virtualNetworkLinks', 'private.postgres.database.azure.com', format('{0}-link', variables('vnetName')))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/privateDnsZones",
+      "apiVersion": "2020-06-01",
+      "name": "private.postgres.database.azure.com",
+      "location": "global",
+      "tags": "[parameters('tags')]"
+    },
+    {
+      "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+      "apiVersion": "2020-06-01",
+      "name": "[format('{0}/{1}', 'private.postgres.database.azure.com', format('{0}-link', variables('vnetName')))]",
+      "location": "global",
+      "properties": {
+        "registrationEnabled": false,
+        "virtualNetwork": {
+          "id": "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/privateDnsZones', 'private.postgres.database.azure.com')]",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.DBforPostgreSQL/flexibleServers/databases",
+      "apiVersion": "2023-12-01-preview",
+      "name": "[format('{0}/{1}', variables('postgresServerName'), 'workshopdb')]",
+      "properties": {
+        "charset": "UTF8",
+        "collation": "en_US.utf8"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', variables('postgresServerName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.DBforPostgreSQL/flexibleServers/firewallRules",
+      "apiVersion": "2023-12-01-preview",
+      "name": "[format('{0}/{1}', variables('postgresServerName'), 'AllowAllAzureServicesAndResourcesWithinAzureIps')]",
+      "properties": {
+        "startIpAddress": "0.0.0.0",
+        "endIpAddress": "0.0.0.0"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', variables('postgresServerName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.App/containerApps",
+      "apiVersion": "2024-03-01",
+      "name": "[variables('containerAppName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "[format('{0}', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName')))]": {}
+        }
+      },
+      "properties": {
+        "environmentId": "[resourceId('Microsoft.App/managedEnvironments', variables('containerAppEnvName'))]",
+        "configuration": {
+          "ingress": {
+            "external": false,
+            "targetPort": 8000,
+            "transport": "http",
+            "allowInsecure": false
+          },
+          "secrets": [
+            {
+              "name": "db-connection-string",
+              "value": "[format('postgresql://{0}:{1}@{2}:5432/workshopdb?sslmode=require', parameters('postgresAdminUsername'), parameters('postgresAdminPassword'), reference(resourceId('Microsoft.DBforPostgreSQL/flexibleServers', variables('postgresServerName')), '2023-12-01-preview').fullyQualifiedDomainName)]"
+            },
+            {
+              "name": "appinsights-connection-string",
+              "value": "[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName')), '2020-02-02').ConnectionString]"
+            }
+          ]
+        },
+        "template": {
+          "containers": [
+            {
+              "name": "api-container",
+              "image": "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest",
+              "resources": {
+                "cpu": "[json('0.5')]",
+                "memory": "1Gi"
+              },
+              "env": [
+                {
+                  "name": "DATABASE_URL",
+                  "secretRef": "db-connection-string"
+                },
+                {
+                  "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+                  "secretRef": "appinsights-connection-string"
+                },
+                {
+                  "name": "PORT",
+                  "value": "8000"
+                }
+              ]
+            }
+          ],
+          "scale": {
+            "minReplicas": 1,
+            "maxReplicas": 3,
+            "rules": [
+              {
+                "name": "http-scaling",
+                "http": {
+                  "metadata": {
+                    "concurrentRequests": "10"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]",
+        "[resourceId('Microsoft.App/managedEnvironments', variables('containerAppEnvName'))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName'))]",
+        "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', variables('postgresServerName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.ApiManagement/service",
+      "apiVersion": "2023-09-01-preview",
+      "name": "[variables('apimName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "sku": {
+        "name": "Developer",
+        "capacity": 1
+      },
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "publisherEmail": "admin@contoso.com",
+        "publisherName": "SRE Workshop",
+        "virtualNetworkType": "None"
+      }
+    },
+    {
+      "type": "Microsoft.ApiManagement/service/loggers",
+      "apiVersion": "2023-09-01-preview",
+      "name": "[format('{0}/{1}', variables('apimName'), variables('appInsightsName'))]",
+      "properties": {
+        "loggerType": "applicationInsights",
+        "credentials": {
+          "instrumentationKey": "[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName')), '2020-02-02').InstrumentationKey]"
+        },
+        "isBuffered": true,
+        "resourceId": "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ApiManagement/service', variables('apimName'))]",
+        "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.ApiManagement/service/diagnostics",
+      "apiVersion": "2023-09-01-preview",
+      "name": "[format('{0}/{1}', variables('apimName'), 'applicationinsights')]",
+      "properties": {
+        "loggerId": "[resourceId('Microsoft.ApiManagement/service/loggers', variables('apimName'), variables('appInsightsName'))]",
+        "alwaysLog": "allErrors",
+        "sampling": {
+          "samplingType": "fixed",
+          "percentage": 100
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ApiManagement/service', variables('apimName'))]",
+        "[resourceId('Microsoft.ApiManagement/service/loggers', variables('apimName'), variables('appInsightsName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.ApiManagement/service/apis",
+      "apiVersion": "2023-09-01-preview",
+      "name": "[format('{0}/{1}', variables('apimName'), 'workshop-api')]",
+      "properties": {
+        "displayName": "Workshop API",
+        "path": "api",
+        "protocols": [
+          "https"
+        ],
+        "serviceUrl": "[format('https://{0}', reference(resourceId('Microsoft.App/containerApps', variables('containerAppName')), '2024-03-01').configuration.ingress.fqdn)]",
+        "subscriptionRequired": true
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ApiManagement/service', variables('apimName'))]",
+        "[resourceId('Microsoft.App/containerApps', variables('containerAppName'))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "resourceGroupName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the resource group"
+      },
+      "value": "[resourceGroup().name]"
+    },
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "The location of the resources"
+      },
+      "value": "[parameters('location')]"
+    },
+    "apimGatewayUrl": {
+      "type": "string",
+      "metadata": {
+        "description": "API Management gateway URL"
+      },
+      "value": "[reference(resourceId('Microsoft.ApiManagement/service', variables('apimName')), '2023-09-01-preview').gatewayUrl]"
+    },
+    "apimServiceName": {
+      "type": "string",
+      "metadata": {
+        "description": "API Management service name"
+      },
+      "value": "[variables('apimName')]"
+    },
+    "containerAppFqdn": {
+      "type": "string",
+      "metadata": {
+        "description": "Container App FQDN"
+      },
+      "value": "[reference(resourceId('Microsoft.App/containerApps', variables('containerAppName')), '2024-03-01').configuration.ingress.fqdn]"
+    },
+    "containerAppName": {
+      "type": "string",
+      "metadata": {
+        "description": "Container App name"
+      },
+      "value": "[variables('containerAppName')]"
+    },
+    "postgresServerFqdn": {
+      "type": "string",
+      "metadata": {
+        "description": "PostgreSQL server FQDN"
+      },
+      "value": "[reference(resourceId('Microsoft.DBforPostgreSQL/flexibleServers', variables('postgresServerName')), '2023-12-01-preview').fullyQualifiedDomainName]"
+    },
+    "postgresDatabaseName": {
+      "type": "string",
+      "metadata": {
+        "description": "PostgreSQL database name"
+      },
+      "value": "workshopdb"
+    },
+    "appInsightsName": {
+      "type": "string",
+      "metadata": {
+        "description": "Application Insights name"
+      },
+      "value": "[variables('appInsightsName')]"
+    },
+    "appInsightsConnectionString": {
+      "type": "string",
+      "metadata": {
+        "description": "Application Insights connection string"
+      },
+      "value": "[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName')), '2020-02-02').ConnectionString]"
+    },
+    "logAnalyticsWorkspaceId": {
+      "type": "string",
+      "metadata": {
+        "description": "Log Analytics workspace ID"
+      },
+      "value": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsName'))]"
+    },
+    "managedIdentityClientId": {
+      "type": "string",
+      "metadata": {
+        "description": "Managed Identity client ID"
+      },
+      "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName')), '2023-01-31').clientId]"
+    },
+    "managedIdentityPrincipalId": {
+      "type": "string",
+      "metadata": {
+        "description": "Managed Identity principal ID"
+      },
+      "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName')), '2023-01-31').principalId]"
+    }
+  }
+}
