@@ -80,30 +80,9 @@ BASE_NAME="srepk"
 
 ---
 
-## Step 4: Deploy Infrastructure
+## Step 4: Create Azure Container Registry
 
-You have two deployment options:
-
-### Option A: Deploy with Placeholder Image (Faster)
-
-This deploys with a simple hello-world container that doesn't require ACR:
-
-```bash
-az deployment group create \
-  --name workshop-deployment-$(date +%Y%m%d-%H%M%S) \
-  --resource-group $RESOURCE_GROUP \
-  --template-file infra/main.bicep \
-  --parameters baseName=$BASE_NAME \
-  --parameters postgresAdminPassword='YourSecurePassword123'
-```
-
-⏱️ **Deployment time: ~10-12 minutes** (APIM is the slowest resource)
-
-### Option B: Deploy with Custom API (Full Workshop)
-
-This deploys the complete FastAPI application with PostgreSQL integration:
-
-#### 4.1: Create Azure Container Registry (if not exists)
+Create an Azure Container Registry to store the workshop API container image:
 
 ```bash
 ACR_NAME="${BASE_NAME}acr$RANDOM"
@@ -115,7 +94,11 @@ az acr create \
   --admin-enabled true
 ```
 
-#### 4.2: Build and Push API Image
+---
+
+## Step 5: Build and Push API Image
+
+Build the FastAPI application container image and push it to ACR:
 
 ```bash
 # Login to ACR
@@ -133,7 +116,11 @@ Or use the provided script:
 ./scripts/build-and-push-api.sh $ACR_NAME v1.0.0
 ```
 
-#### 4.3: Deploy with Custom Image
+---
+
+## Step 6: Deploy Infrastructure
+
+Deploy the complete infrastructure with the custom API:
 
 ```bash
 az deployment group create \
@@ -146,7 +133,11 @@ az deployment group create \
   --parameters postgresAdminPassword='YourSecurePassword123'
 ```
 
-#### 4.4: Grant ACR Pull Permissions
+⏱️ **Deployment time: ~10-12 minutes** (APIM is the slowest resource)
+
+---
+
+## Step 7: Grant ACR Pull Permissions
 
 After deployment completes, grant the managed identity permission to pull from ACR:
 
@@ -171,7 +162,7 @@ az containerapp restart \
 
 ---
 
-## Step 5: Monitor Deployment Progress
+## Step 8: Monitor Deployment Progress
 
 While deployment is running, you can monitor progress:
 
@@ -202,7 +193,7 @@ az deployment operation group list \
 
 ---
 
-## Step 6: Verify Deployment
+## Step 9: Verify Deployment
 
 Once deployment completes, verify all resources were created successfully:
 
@@ -231,7 +222,7 @@ az apim api list \
 
 ---
 
-## Step 7: Get APIM Gateway URL and Subscription Key
+## Step 10: Get APIM Gateway URL and Subscription Key
 
 ```bash
 # Get APIM gateway URL
@@ -257,9 +248,9 @@ echo "export SUBSCRIPTION_KEY=$SUBSCRIPTION_KEY" >> ~/.workshop-env
 
 ---
 
-## Step 8: Test the API
+## Step 11: Test the API
 
-### 8.1: Test Health Endpoint
+### 11.1: Test Health Endpoint
 
 ```bash
 curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
@@ -274,7 +265,7 @@ curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
 }
 ```
 
-### 8.2: Test Root Endpoint
+### 11.2: Test Root Endpoint
 
 ```bash
 curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
@@ -294,9 +285,7 @@ curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
 }
 ```
 
-### 8.3: Test CRUD Operations (Custom API only)
-
-If you deployed with the custom API image:
+### 11.3: Test CRUD Operations
 
 #### Create an Item
 ```bash
@@ -360,7 +349,7 @@ curl -X DELETE \
 
 ---
 
-## Step 9: Explore the Azure Portal
+## Step 12: Explore the Azure Portal
 
 1. Navigate to the Azure Portal: https://portal.azure.com
 2. Open your resource group: `$RESOURCE_GROUP`
@@ -391,7 +380,7 @@ curl -X DELETE \
 
 ---
 
-## Step 10: Verify Integration
+## Step 13: Verify Integration
 
 ### Check Application Insights Integration
 
