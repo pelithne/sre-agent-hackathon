@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.30.23.60470",
-      "templateHash": "2657834440892347595"
+      "templateHash": "7920419411534182023"
     }
   },
   "parameters": {
@@ -47,6 +47,13 @@
       "minLength": 12,
       "metadata": {
         "description": "Administrator password for PostgreSQL"
+      }
+    },
+    "containerImage": {
+      "type": "string",
+      "defaultValue": "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest",
+      "metadata": {
+        "description": "Container image for the API (default: placeholder hello-world image)"
       }
     },
     "tags": {
@@ -283,7 +290,7 @@
         "configuration": {
           "ingress": {
             "external": false,
-            "targetPort": 8000,
+            "targetPort": "[if(contains(parameters('containerImage'), 'helloworld'), 80, 8000)]",
             "transport": "http",
             "allowInsecure": false
           },
@@ -302,25 +309,12 @@
           "containers": [
             {
               "name": "api-container",
-              "image": "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest",
+              "image": "[parameters('containerImage')]",
               "resources": {
                 "cpu": "[json('0.5')]",
                 "memory": "1Gi"
               },
-              "env": [
-                {
-                  "name": "DATABASE_URL",
-                  "secretRef": "db-connection-string"
-                },
-                {
-                  "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
-                  "secretRef": "appinsights-connection-string"
-                },
-                {
-                  "name": "PORT",
-                  "value": "8000"
-                }
-              ]
+              "env": "[concat(createArray(createObject('name', 'DATABASE_URL', 'secretRef', 'db-connection-string'), createObject('name', 'APPLICATIONINSIGHTS_CONNECTION_STRING', 'secretRef', 'appinsights-connection-string')), if(contains(parameters('containerImage'), 'helloworld'), createArray(), createArray(createObject('name', 'PORT', 'value', '8000'))))]"
             }
           ],
           "scale": {

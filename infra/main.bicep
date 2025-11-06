@@ -38,6 +38,9 @@ param postgresAdminUsername string = 'sqladmin'
 @minLength(12)
 param postgresAdminPassword string
 
+@description('Container image for the API (default: placeholder hello-world image)')
+param containerImage string = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
+
 @description('Tags to apply to all resources')
 param tags object = {
   Environment: environmentName
@@ -262,7 +265,7 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
     configuration: {
       ingress: {
         external: false
-        targetPort: 80  // Changed to 80 to match the placeholder hello-world image
+        targetPort: contains(containerImage, 'helloworld') ? 80 : 8000  // Use port 80 for placeholder, 8000 for custom API
         transport: 'http'
         allowInsecure: false
       }
@@ -281,22 +284,30 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
       containers: [
         {
           name: 'api-container'
-          image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest' // Placeholder image (listens on port 80)
+          image: containerImage
           resources: {
             cpu: json('0.5')
             memory: '1Gi'
           }
-          env: [
-            {
-              name: 'DATABASE_URL'
-              secretRef: 'db-connection-string'
-            }
-            {
-              name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-              secretRef: 'appinsights-connection-string'
-            }
-            // PORT removed - the hello-world image ignores this and always uses port 80
-          ]
+          env: concat(
+            [
+              {
+                name: 'DATABASE_URL'
+                secretRef: 'db-connection-string'
+              }
+              {
+                name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+                secretRef: 'appinsights-connection-string'
+              }
+            ],
+            // Add PORT environment variable only for custom API (not for placeholder)
+            contains(containerImage, 'helloworld') ? [] : [
+              {
+                name: 'PORT'
+                value: '8000'
+              }
+            ]
+          )
         }
       ]
       scale: {
