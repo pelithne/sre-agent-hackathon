@@ -98,106 +98,110 @@ Familiarity with these Azure services is helpful but not required:
 
 ## 🚀 Workshop Structure
 
-The workshop is divided into progressive modules:
+The workshop is divided into progressive parts:
 
-### [Module 1: Environment Setup](./docs/01-setup.md)
+### [Part 1: Setup & Deployment](./exercises/part1-setup.md) (60-90 minutes)
 - Set up your development environment
-- Clone the workshop repository
-- Authenticate with Azure
-- Verify prerequisites
-
-### [Module 2: Infrastructure Deployment](./docs/02-infrastructure.md)
 - Understand the Bicep templates
-- Deploy Azure resources
-- Configure networking and security
-- Verify deployment
+- Deploy Azure infrastructure (APIM, Container Apps, PostgreSQL)
+- Configure managed identity for ACR access
+- Test all API endpoints through APIM
+- Verify deployment and troubleshoot common issues
 
-### [Module 3: Application Deployment](./docs/03-application.md)
-- Build the sample API
-- Create container images
-- Deploy to Container Apps
-- Configure API Management
-- Test the end-to-end flow
+**Learning Objectives:**
+- Deploy production-ready infrastructure using Bicep
+- Configure Azure services for containerized applications
+- Test end-to-end API functionality
+- Understand Azure architecture patterns
 
-### [Module 4: SRE Agent Basics](./docs/04-sre-agent-basics.md)
-- Introduction to Azure SRE Agent
-- Configure SRE Agent access
-- Basic troubleshooting workflows
-- Understanding SRE Agent capabilities
-
-### [Module 5: Troubleshooting with SRE Agent](./docs/05-troubleshooting.md)
-- **Exercise 5.1**: Database connectivity issues
-- **Exercise 5.2**: Performance degradation
-- **Exercise 5.3**: Configuration errors
-- **Exercise 5.4**: API Management policy problems
-- **Exercise 5.5**: Container app failures
+### [Part 2: SRE Agent Troubleshooting](./exercises/part2-troubleshooting.md) (60-90 minutes)
+- **Exercise 1**: API 500 errors - Database connectivity and VNet troubleshooting
+- **Exercise 2**: High response times - Performance analysis and optimization
+- **Exercise 3**: Container not starting - ACR pull issues and managed identity
+- **Exercise 4**: APIM timeout - Policy configuration and backend settings
+- **Exercise 5**: Connection pool exhaustion - Load testing and pooling configuration
+- **Exercise 6**: Missing environment variables - Secret management and configuration
+- **Exercise 7**: Regional outage - Resilience planning and service health
+- **Advanced Challenge**: Multi-service failure requiring systematic diagnosis
 
 Each exercise includes:
-- Problem scenario
-- How to introduce the issue
-- Symptoms to observe
-- Using SRE Agent for diagnosis
-- Resolution steps
+- Realistic failure scenario
+- Step-by-step investigation with SRE Agent
+- Root cause identification
+- Fix implementation and verification
+- Best practices and prevention strategies
 
-### [Module 6: Monitoring & Incident Management](./docs/06-monitoring.md)
-- Configure Azure Monitor alerts
-- Set up action groups and notifications
-- Connect SRE Agent to alert pipeline
-- Perform incident investigation
-- Create Root Cause Analysis (RCA) reports
-- Implement post-incident reviews
+### [Part 3: Monitoring & Alerts](./exercises/part3-monitoring.md) (60-90 minutes)
+- **Exercise 1**: Basic metric alerts - CPU, memory, storage thresholds
+- **Exercise 2**: Log-based alerts - Error rate and performance anomalies
+- **Exercise 3**: Availability tests - Synthetic monitoring from multiple regions
+- **Exercise 4**: Monitoring dashboards - KQL queries and custom visualizations
+- **Exercise 5**: Incident investigation - Using SRE Agent for alert triage
+- **Exercise 6**: RCA reports - Documenting incidents with SRE Agent assistance
+- **Exercise 7**: SLO monitoring - Error budgets and burn rate tracking
+- **Exercise 8**: Alert fatigue management - Optimizing alert rules and runbooks
 
-### [Module 7: Advanced Topics](./docs/07-advanced.md)
-- **Exercise 7.1**: Auto-remediation scenarios
-- **Exercise 7.2**: Multi-service debugging
-- **Exercise 7.3**: Performance optimization
-- **Exercise 7.4**: Security incident investigation
-- **Exercise 7.5**: Chaos engineering with SRE Agent
-- **Exercise 7.6**: Cost optimization recommendations
-- **Exercise 7.7**: Implementing SRE best practices
+**Learning Objectives:**
+- Configure comprehensive monitoring and alerting
+- Use SRE Agent for incident investigation
+- Write effective RCA reports
+- Implement SLO-based monitoring
 
-### [Module 8: Cleanup](./docs/08-cleanup.md)
-- Remove workshop resources
-- Prevent unexpected costs
-- Optional: preserve learnings
+### [Advanced Exercises](./exercises/advanced-exercises.md) (2-4 hours, optional)
+- **Exercise 1**: Auto-remediation - Azure Automation runbooks and webhooks
+- **Exercise 2**: Chaos engineering - Testing resilience with failure injection
+- **Exercise 3**: Multi-region resilience - DR planning and failover testing
+- **Exercise 4**: Performance optimization - Caching, indexing, and profiling
+- **Exercise 5**: Security incident investigation - Forensic analysis with SRE Agent
+- **Exercise 6**: Cost optimization - Resource right-sizing and efficiency analysis
+- **Exercise 7**: Custom metrics - Business KPIs and stakeholder dashboards
+
+**Learning Objectives:**
+- Implement production-grade SRE practices
+- Build automated remediation workflows
+- Validate system resilience through testing
+- Optimize for performance and cost
+
+### [Cleanup](./docs/cleanup.md)
+- Quick cleanup (delete resource group)
+- Selective cleanup (keep specific resources)
+- Automated cleanup script
+- Cost considerations and verification
 
 ## 📚 Additional Resources
 
-- [Workshop Scripts](./scripts/) - Helper scripts for deployment and testing
-- [Troubleshooting Guide](./docs/troubleshooting.md) - Common issues and solutions
-- [FAQ](./docs/faq.md) - Frequently asked questions
-- [Additional Exercises](./docs/bonus-exercises.md) - Optional challenges
-
-## 🤝 Contributing
-
-Found an issue or want to improve the workshop? Contributions are welcome!
-Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for details.
-
-## 📖 Learning Resources
+### Workshop Materials
+- [Quick Deployment Script](./scripts/deploy.sh) - Automated deployment with validation
+- [Cleanup Guide](./docs/cleanup.md) - Resource cleanup automation and best practices
+- [FAQ](./docs/FAQ.md) - 40+ frequently asked questions and answers
+- [Infrastructure Templates](./infra/) - Bicep templates and parameters
 
 ### Azure SRE Agent
 - [Azure SRE Agent Documentation](https://learn.microsoft.com/azure/sre-agent/)
-- [SRE Agent Best Practices](https://learn.microsoft.com/azure/sre-agent/best-practices)
-- [Incident Response with SRE Agent](https://learn.microsoft.com/azure/sre-agent/incident-response)
+- [GitHub Copilot for Azure](https://learn.microsoft.com/azure/developer/github-copilot-azure)
 
 ### Azure Services
 - [Azure API Management](https://learn.microsoft.com/azure/api-management/)
 - [Azure Container Apps](https://learn.microsoft.com/azure/container-apps/)
 - [Azure Database for PostgreSQL](https://learn.microsoft.com/azure/postgresql/)
 - [Azure Monitor](https://learn.microsoft.com/azure/azure-monitor/)
+- [Application Insights](https://learn.microsoft.com/azure/azure-monitor/app/app-insights-overview)
 
 ### SRE Principles
 - [Google SRE Book](https://sre.google/books/)
 - [Microsoft SRE Resources](https://learn.microsoft.com/azure/site-reliability-engineering/)
+- [Azure Well-Architected Framework](https://learn.microsoft.com/azure/architecture/framework/)
 
 ## ⏱️ Estimated Time
 
-- **Module 1-3** (Setup & Deployment): 60-90 minutes
-- **Module 4** (SRE Agent Basics): 30 minutes
-- **Module 5** (Troubleshooting): 90-120 minutes
-- **Module 6** (Monitoring): 60 minutes
-- **Module 7** (Advanced): 60-120 minutes (optional)
-- **Total**: 4-7 hours (can be split across multiple sessions)
+- **Part 1** (Setup & Deployment): 60-90 minutes
+- **Part 2** (SRE Agent Troubleshooting): 60-90 minutes
+- **Part 3** (Monitoring & Alerts): 60-90 minutes
+- **Advanced Exercises** (Optional): 120-240 minutes
+- **Total Core Workshop**: 3-4.5 hours
+- **Total with Advanced**: 5-8 hours
+
+The workshop can be completed in one session or split across multiple sessions.
 
 ## 🎓 Learning Objectives
 
@@ -214,26 +218,33 @@ By the end of this workshop, you will be able to:
 
 ## 💡 Tips for Success
 
-1. **Follow the modules in order** - Each builds on the previous
+1. **Follow the parts in order** - Each builds on the previous
 2. **Take your time with exercises** - Understanding is more important than speed
-3. **Experiment freely** - The workshop environment is yours to explore
-4. **Ask questions** - Use GitHub issues or discussions
+3. **Use SRE Agent actively** - Practice asking good questions
+4. **Experiment freely** - The workshop environment is yours to explore
 5. **Document your learnings** - Keep notes of insights and solutions
-6. **Clean up resources** - Don't forget Module 8 to avoid unexpected costs
+6. **Clean up resources** - Use the cleanup guide to avoid unexpected costs
+7. **Share your experience** - Contribute improvements via pull requests
 
 ## 📞 Support
 
 If you encounter issues during the workshop:
 
-1. Check the [Troubleshooting Guide](./docs/troubleshooting.md)
-2. Review the [FAQ](./docs/faq.md)
-3. Create an issue in this repository
-4. Reach out to workshop facilitators
+1. Check the [FAQ](./docs/FAQ.md) - 40+ common questions answered
+2. Review the [Cleanup Guide](./docs/cleanup.md) - For resource cleanup issues
+3. Check exercise troubleshooting sections - Each part includes common issues
+4. Create an issue in this repository
+5. Use Azure SRE Agent - Ask it for help with Azure-specific issues
 
-## 📄 License
+## 🤝 Contributing
 
-This workshop is provided under the MIT License. See [LICENSE](./LICENSE) for details.
+Found an issue or want to improve the workshop? Contributions are welcome!
+
+- Report bugs or issues via GitHub Issues
+- Submit improvements via Pull Requests
+- Share feedback and suggestions
+- Add your own advanced exercises
 
 ---
 
-**Ready to become an Azure SRE expert? Let's get started with [Module 1: Environment Setup](./docs/01-setup.md)!** 🚀
+**Ready to become an Azure SRE expert? Let's get started with [Part 1: Setup & Deployment](./exercises/part1-setup.md)!** 🚀
