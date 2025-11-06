@@ -113,12 +113,9 @@ docker push $ACR_NAME.azurecr.io/workshop-api:v1.0.0
 cd ../..
 ```
 
-Or use the provided script:
-```bash
-./scripts/build-and-push-api.sh $ACR_NAME v1.0.0
-```
+> **Note:** This builds the Docker image from the FastAPI application source code and pushes it to your Azure Container Registry. The build process typically takes 1-2 minutes.
 
----
+------
 
 ## Step 6: Deploy Infrastructure
 
