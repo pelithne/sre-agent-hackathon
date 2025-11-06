@@ -58,10 +58,10 @@ az role assignment create \
 
 ### Step 3: Create Runbook
 
-Ask SRE Agent:
+In your Azure SRE Agent chat, ask:
 ```
-"Create a PowerShell runbook for Azure Automation that restarts a 
-Container App when triggered by an alert. Include logging and error handling."
+Create a PowerShell runbook for Azure Automation that restarts a 
+Container App when triggered by an alert. Include logging and error handling.
 ```
 
 Create the runbook:
@@ -185,25 +185,12 @@ az monitor action-group create \
     use-common-alert-schema=true
 ```
 
-### Step 6: Create Alert with Auto-Remediation
+### Step 6: Load Testing
 
-```bash
-# Create alert that triggers auto-remediation
-az monitor scheduled-query create \
-  --name "Failed-Health-Checks-Auto-Restart" \
-  --resource-group $RESOURCE_GROUP \
-  --scopes $APP_INSIGHTS_ID \
-  --condition "count > 5" \
-  --condition-query "
-    requests
-    | where name == 'GET /health' and success == false
-    | summarize count()
-  " \
-  --window-size 5m \
-  --evaluation-frequency 5m \
-  --action-groups "Auto-Remediation-Restart" \
-  --description "Auto-restart Container App after 5 failed health checks" \
-  --severity 2
+Use Azure SRE Agent to design load testing:
+```
+Create a load testing strategy for my API to validate these optimizations.
+Include ramp-up patterns and success criteria.
 ```
 
 ### Step 7: Test Auto-Remediation
@@ -225,12 +212,12 @@ az automation job list \
   --output table
 ```
 
-### Discussion with SRE Agent
+### Discussion with Azure SRE Agent
 
-Ask SRE Agent:
+In your Azure SRE Agent chat, ask:
 ```
-"What are the risks of auto-remediation and when should I use 
-human-in-the-loop instead of fully automated remediation?"
+What are the risks of auto-remediation and when should I use 
+human-in-the-loop instead of fully automated remediation?
 ```
 
 ### Key Learnings
@@ -268,10 +255,10 @@ az chaos experiment create \
 
 ### Step 2: Design Chaos Experiment
 
-Ask SRE Agent:
+In your Azure SRE Agent chat, ask:
 ```
-"Design a chaos engineering experiment to test if my monitoring 
-and alerting works correctly when Container App CPU spikes."
+Design a chaos engineering experiment to test if my monitoring 
+and alerting works correctly when Container App CPU spikes.
 ```
 
 Experiment design:
@@ -377,7 +364,7 @@ Before running experiment:
 During experiment:
 1. Watch for alert notifications
 2. Monitor dashboard metrics
-3. Use SRE Agent to investigate
+3. Use Azure SRE Agent to investigate
 4. Document response timeline
 
 After experiment:
@@ -388,12 +375,12 @@ After experiment:
 
 ### Step 6: Write Chaos Report
 
-Ask SRE Agent:
+In your Azure SRE Agent chat, ask:
 ```
-"Help me write a chaos engineering report. Experiment: CPU pressure 
+Help me write a chaos engineering report. Experiment: CPU pressure 
 for 10 minutes. Result: Alert fired after 3 minutes, team responded 
 in 5 minutes, false alarm (CPU normal after load stopped). Gap: Need 
-to distinguish between artificial load and real issues."
+to distinguish between artificial load and real issues.
 ```
 
 ### Key Learnings
@@ -418,10 +405,10 @@ Understand the impact of regional outages and validate DR procedures.
 
 ### Step 1: Design Multi-Region Architecture
 
-Ask SRE Agent:
+In your Azure SRE Agent chat, ask:
 ```
-"Design a multi-region architecture for my Container App and PostgreSQL 
-setup. Consider RPO, RTO, and cost constraints."
+Design a multi-region architecture for my Container App and PostgreSQL 
+setup. Consider RPO, RTO, and cost constraints.
 ```
 
 Typical design:
@@ -474,10 +461,10 @@ echo "Outage started: $START_TIME" >> resilience-report.md
 
 ### Step 4: Execute DR Procedure
 
-Ask SRE Agent:
+In your Azure SRE Agent chat, ask:
 ```
-"My primary region is down. Walk me through the DR procedure to 
-deploy to a secondary region using my existing Bicep templates."
+My primary region is down. Walk me through the DR procedure to 
+deploy to a secondary region using my existing Bicep templates.
 ```
 
 ```bash
@@ -533,10 +520,10 @@ echo "RPO Analysis: [Document data loss if any]" >> resilience-report.md
 
 ### Step 7: Cost Analysis
 
-Ask SRE Agent:
+In your Azure SRE Agent chat, ask:
 ```
-"Calculate the monthly cost difference between single-region 
-and active-passive multi-region setup for this architecture."
+Calculate the monthly cost difference between single-region 
+and active-passive multi-region setup for this architecture.
 ```
 
 ### Key Learnings
@@ -592,10 +579,10 @@ sort -n response-times.txt | awk '
 
 ### Step 2: Profile with Application Insights
 
-Ask SRE Agent:
+In your Azure SRE Agent chat, ask:
 ```
-"Write KQL queries to identify performance bottlenecks in my API. 
-Look at request duration, dependency calls, and database queries."
+Write KQL queries to identify performance bottlenecks in my API. 
+Look at request duration, dependency calls, and database queries.
 ```
 
 ```bash
@@ -632,10 +619,10 @@ az monitor app-insights query \
 
 ### Step 3: Identify Optimization Opportunities
 
-Ask SRE Agent to analyze results:
+In your Azure SRE Agent chat to analyze results, ask:
 ```
-"Based on these metrics: GET /items avg 450ms, database query avg 
-380ms, 100 database calls per request. What optimizations should I implement?"
+Based on these metrics: GET /items avg 450ms, database query avg 
+380ms, 100 database calls per request. What optimizations should I implement?
 ```
 
 Common optimizations:
@@ -681,10 +668,10 @@ az containerapp update \
 
 ### Step 5: Add Caching to API Code
 
-Ask SRE Agent:
+In your Azure SRE Agent chat, ask:
 ```
-"Show me how to add Redis caching to my FastAPI GET /items endpoint 
-with a 5-minute TTL."
+Show me how to add Redis caching to my FastAPI GET /items endpoint 
+with a 5-minute TTL.
 ```
 
 Example code (add to your API):
@@ -800,7 +787,7 @@ Suspicious activity detected. Investigate potential security breach.
 
 ### Objective
 
-Use SRE Agent and Azure tools to investigate security incident.
+Use Azure SRE Agent and Azure tools to investigate security incident.
 
 ### Step 1: Receive Security Alert
 
@@ -813,16 +800,16 @@ Scenario:
 - Time: 2025-11-06 03:00-03:05 UTC"
 ```
 
-### Step 2: Initial Triage with SRE Agent
+### Step 2: Initial Triage with Azure SRE Agent
 
-Ask SRE Agent:
+In your Azure SRE Agent chat, ask:
 ```
-"I received a security alert for unusual API access. Walk me through 
+I received a security alert for unusual API access. Walk me through 
 the investigation steps to determine if this is a real security incident 
-or false positive."
+or false positive.
 ```
 
-SRE Agent will guide you through:
+The agent will guide you through:
 1. Verify alert details
 2. Check request patterns
 3. Analyze authentication logs
@@ -903,11 +890,11 @@ az monitor app-insights query \
 
 ### Step 6: Assess Impact
 
-Ask SRE Agent:
+In your Azure SRE Agent chat, ask:
 ```
-"Based on these findings: 10,000 requests, all GET /items, same subscription 
+Based on these findings: 10,000 requests, all GET /items, same subscription 
 key, 98% success rate, no SQL injection attempts. Is this a security incident 
-or legitimate traffic?"
+or legitimate traffic?
 ```
 
 ### Step 7: Take Containment Actions (If Needed)
@@ -1023,11 +1010,11 @@ az costmanagement query \
 
 ### Step 2: Identify Optimization Opportunities
 
-Ask SRE Agent:
+In your Azure SRE Agent chat, ask:
 ```
-"I have: Container Apps (3 replicas, 1 vCPU, 2GB each), PostgreSQL 
+I have: Container Apps (3 replicas, 1 vCPU, 2GB each), PostgreSQL 
 Flexible Server (B1ms), APIM Consumption tier, Application Insights. 
-What cost optimizations can I implement?"
+What cost optimizations can I implement?
 ```
 
 Common optimizations:
@@ -1129,10 +1116,10 @@ Track business KPIs like items created per day, active users, API adoption.
 
 ### Step 1: Define Business Metrics
 
-Ask SRE Agent:
+In your Azure SRE Agent chat, ask:
 ```
-"I want to track business metrics for my API. Suggest KPIs for: 
-user adoption, feature usage, and business value delivered."
+I want to track business metrics for my API. Suggest KPIs for: 
+user adoption, feature usage, and business value delivered.
 ```
 
 Example metrics:

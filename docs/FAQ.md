@@ -22,7 +22,7 @@ A: You need:
 - Azure CLI installed and configured
 - Docker installed (if building custom images)
 - Basic understanding of REST APIs and cloud concepts
-- GitHub Copilot for Azure (SRE Agent) access
+- Azure SRE Agent created and configured (see Part 2 instructions)
 
 ---
 
@@ -221,23 +221,26 @@ curl -X DELETE \
 
 **Q: What is SRE Agent?**
 
-A: SRE Agent is GitHub Copilot for Azure, an AI assistant specialized in Azure operations, troubleshooting, and SRE practices. It helps you:
-- Investigate incidents
-- Write KQL queries
-- Generate Azure CLI commands
-- Create runbooks and documentation
-- Provide best practices
+A: Azure SRE Agent is an Azure service that provides AI-powered monitoring and incident management for your Azure resources. It helps you:
+- Investigate incidents and issues with your Azure resources
+- Analyze metrics and logs using natural language queries
+- Get troubleshooting recommendations and root cause analysis
+- Receive proactive alerts and insights about your infrastructure
+- Access Azure expertise through a chat interface in the Azure Portal
+
+The agent monitors your resource group and provides intelligent assistance for SRE tasks.
 
 ---
 
 **Q: How do I get access to SRE Agent?**
 
-A: SRE Agent is available as:
-- GitHub Copilot for Azure in VS Code
-- Azure Portal integration
-- Azure CLI integration (preview)
+A: Azure SRE Agent is created through the Azure Portal:
+1. Visit https://aka.ms/sreagent/portal
+2. Create an SRE Agent instance (available in Sweden Central, East US 2, or Australia East)
+3. Associate it with your resource group
+4. Access the chat interface via the Azure Portal
 
-Check with your organization's GitHub or Azure administrator for access.
+Detailed setup instructions are provided in Part 2 of the workshop exercises.
 
 ---
 

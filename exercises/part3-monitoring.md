@@ -2,7 +2,7 @@
 
 ## Overview
 
-In this exercise, you'll learn to set up proactive monitoring and alerting for your Azure infrastructure. You'll configure Azure Monitor alerts, create dashboards, and use SRE Agent to investigate incidents and create Root Cause Analysis (RCA) reports.
+In this exercise, you'll learn to set up proactive monitoring and alerting for your Azure infrastructure. You'll configure Azure Monitor alerts, create dashboards, and use Azure SRE Agent to investigate incidents and create Root Cause Analysis (RCA) reports.
 
 **Estimated Time:** 60-90 minutes
 
@@ -11,7 +11,7 @@ In this exercise, you'll learn to set up proactive monitoring and alerting for y
 - Completed [Part 1: Setup](./part1-setup.md) and [Part 2: Troubleshooting](./part2-troubleshooting.md)
 - Working infrastructure with API deployed
 - Application Insights configured
-- Access to GitHub Copilot for Azure / SRE Agent
+- Azure SRE Agent created and configured (from Part 2)
 
 ## Learning Objectives
 
@@ -20,8 +20,8 @@ By the end of this exercise, you will:
 - Set up log-based alerts for error conditions
 - Create availability tests for API endpoints
 - Build monitoring dashboards
-- Use SRE Agent to investigate alert notifications
-- Write comprehensive RCA reports with SRE Agent assistance
+- Use Azure SRE Agent to investigate alert notifications
+- Write comprehensive RCA reports with Azure SRE Agent assistance
 - Implement alert action groups for incident response
 
 ---
@@ -50,10 +50,10 @@ az monitor action-group create \
 
 ### Step 2: Create CPU Alert for Container App
 
-Ask SRE Agent:
+In your Azure SRE Agent chat, ask:
 ```
-"How do I create an alert in Azure Monitor that notifies me when 
-my Container App CPU usage exceeds 80% for 5 minutes?"
+How do I create an alert in Azure Monitor that notifies me when 
+my Container App CPU usage exceeds 80% for 5 minutes?
 ```
 
 Create the alert:
@@ -171,10 +171,10 @@ Set up alerts based on application logs to catch errors and anomalies.
 
 ### Step 1: Create Failed Request Alert
 
-Ask SRE Agent:
+In your Azure SRE Agent chat, ask:
 ```
-"How do I create a log-based alert in Application Insights that fires 
-when there are more than 10 failed requests (5xx errors) in 5 minutes?"
+How do I create a log-based alert in Application Insights that fires 
+when there are more than 10 failed requests (5xx errors) in 5 minutes?
 ```
 
 Get Application Insights resource ID:
@@ -302,10 +302,10 @@ Set up synthetic monitoring to test API availability from multiple regions.
 
 ### Step 1: Create Standard Availability Test
 
-Ask SRE Agent:
+In your Azure SRE Agent chat, ask:
 ```
-"How do I create an availability test in Application Insights 
-that checks my API endpoint every 5 minutes from multiple regions?"
+How do I create an availability test in Application Insights 
+that checks my API endpoint every 5 minutes from multiple regions?
 ```
 
 Using Azure Portal (CLI doesn't fully support availability tests):
@@ -489,11 +489,11 @@ What key metrics should I include in my monitoring dashboard for SRE purposes?"
 
 ---
 
-## Exercise 5: Incident Investigation with SRE Agent
+## Exercise 5: Incident Investigation with Azure SRE Agent
 
 ### Scenario
 
-An alert fired indicating high error rates. Use SRE Agent to investigate and document the incident.
+An alert fired indicating high error rates. Use Azure SRE Agent to investigate and document the incident.
 
 ### Step 1: Receive Alert Notification
 
@@ -504,16 +504,16 @@ More than 10 server errors detected in the last 5 minutes
 Resource: workshop-api in sre-workshop-pk"
 ```
 
-### Step 2: Initial Triage with SRE Agent
+### Step 2: Initial Triage with Azure SRE Agent
 
-Ask SRE Agent:
+In your Azure SRE Agent chat, ask:
 ```
-"I received an alert for high error rate (>10 5xx errors in 5 minutes) 
+I received an alert for high error rate (>10 5xx errors in 5 minutes) 
 from my API at 14:30 UTC. What's the first thing I should check to 
-understand the scope and impact?"
+understand the scope and impact?
 ```
 
-SRE Agent will guide you through:
+The agent will guide you through:
 1. Check current error rate
 2. Identify affected endpoints
 3. Determine if issue is ongoing
@@ -521,7 +521,7 @@ SRE Agent will guide you through:
 
 ### Step 3: Gather Context
 
-Follow SRE Agent's recommendations:
+Follow the agent's recommendations:
 
 ```bash
 # Check current error rate
@@ -553,10 +553,10 @@ az monitor app-insights query \
 
 ### Step 4: Analyze Error Details
 
-Ask SRE Agent:
+In your Azure SRE Agent chat, ask:
 ```
-"The errors are on POST /items endpoint with 500 status code. 
-How can I see the actual error messages from Application Insights?"
+The errors are on POST /items endpoint with 500 status code. 
+How can I see the actual error messages from Application Insights?
 ```
 
 ```bash
@@ -602,10 +602,10 @@ az monitor app-insights query \
 
 ### Step 6: Correlate with Infrastructure
 
-Ask SRE Agent:
+In your Azure SRE Agent chat, ask:
 ```
-"The errors started at 14:30. How can I check if there were 
-any infrastructure changes or deployments around that time?"
+The errors started at 14:30. How can I check if there were 
+any infrastructure changes or deployments around that time?
 ```
 
 ```bash
@@ -626,16 +626,16 @@ az monitor activity-log list \
 
 ### Step 7: Identify Root Cause
 
-After gathering data, ask SRE Agent:
+After gathering data, ask Azure SRE Agent:
 ```
-"Based on these findings:
+Based on these findings:
 - Errors started at 14:30
 - Only POST /items endpoint affected
 - Error message: 'database connection refused'
 - No recent deployments
 - PostgreSQL CPU at 5%
 
-What's the likely root cause and how should I fix it?"
+What's the likely root cause and how should I fix it?
 ```
 
 ### Key Learnings
@@ -643,7 +643,7 @@ What's the likely root cause and how should I fix it?"
 - Systematic investigation follows the request path
 - Application Insights correlates related telemetry
 - Activity logs show infrastructure changes
-- SRE Agent helps form hypotheses from symptoms
+- Azure SRE Agent helps form hypotheses from symptoms
 
 ---
 
@@ -651,7 +651,7 @@ What's the likely root cause and how should I fix it?"
 
 ### Scenario
 
-After resolving an incident, document it with an RCA report using SRE Agent.
+After resolving an incident, document it with an RCA report using Azure SRE Agent.
 
 ### Step 1: Prepare Incident Details
 
@@ -665,22 +665,23 @@ Gather:
 - Root cause
 - Fix applied
 
-### Step 2: Ask SRE Agent to Draft RCA
+### Step 2: Ask Azure SRE Agent to Draft RCA
 
+In your Azure SRE Agent chat, ask:
 ```
-"Help me write an RCA report for this incident:
+Help me write an RCA report for this incident:
 - Date: 2025-11-06 14:30-15:15 UTC
 - Issue: High error rate (85% failures) on POST /items endpoint
 - Detection: Azure Monitor alert
 - Root cause: PostgreSQL max_connections limit reached due to missing connection pooling
 - Impact: Users unable to create items for 45 minutes
 - Fix: Implemented connection pooling with pool_size=5, max_overflow=10
-- Prevention: Added alert for database connection count"
+- Prevention: Added alert for database connection count
 ```
 
-### Step 3: Review SRE Agent's Draft
+### Step 3: Review Azure SRE Agent's Draft
 
-SRE Agent will generate something like:
+The agent will generate something like:
 
 ```markdown
 # Root Cause Analysis: API POST Failures - November 6, 2025
@@ -735,15 +736,15 @@ Implemented SQLAlchemy connection pooling with:
 - Connection pooling is critical for database-backed APIs
 - Load testing reveals scalability issues before production
 - Application Insights quickly identified the affected endpoint
-- SRE Agent expedited root cause identification
+- Azure SRE Agent expedited root cause identification
 ```
 
 ### Step 4: Enhance RCA with Details
 
-Ask SRE Agent:
+In your Azure SRE Agent chat, ask:
 ```
-"Add a technical details section to the RCA explaining how 
-connection pooling prevents this issue"
+Add a technical details section to the RCA explaining how 
+connection pooling prevents this issue
 ```
 
 ### Step 5: Save and Share RCA
@@ -754,7 +755,7 @@ mkdir -p incidents
 
 # Save RCA report
 cat > incidents/rca-2025-11-06-api-failures.md << 'EOF'
-[Paste SRE Agent's RCA here]
+[Paste Azure SRE Agent's RCA here]
 EOF
 
 # Commit to repository for team visibility
@@ -765,7 +766,7 @@ git commit -m "docs: Add RCA for API failure incident on 2025-11-06"
 ### Key Learnings
 
 - RCA documents prevent repeated issues
-- SRE Agent accelerates RCA writing
+- Azure SRE Agent accelerates RCA writing
 - Action items improve future reliability
 - Sharing RCAs builds team knowledge
 
@@ -777,12 +778,12 @@ git commit -m "docs: Add RCA for API failure incident on 2025-11-06"
 
 Define and monitor Service Level Objectives (SLOs) for your API.
 
-### Step 1: Define SLOs with SRE Agent
+### Step 1: Define SLOs with Azure SRE Agent
 
-Ask SRE Agent:
+In your Azure SRE Agent chat, ask:
 ```
-"I have a REST API serving customer requests. Help me define 
-appropriate SLOs for availability, latency, and error rate."
+I have a REST API serving customer requests. Help me define 
+appropriate SLOs for availability, latency, and error rate.
 ```
 
 Example SLOs:
@@ -792,9 +793,9 @@ Example SLOs:
 
 ### Step 2: Calculate Error Budget
 
-Ask SRE Agent:
+In your Azure SRE Agent chat, ask:
 ```
-"With a 99.9% availability SLO, what's my error budget for one month?"
+With a 99.9% availability SLO, what's my error budget for one month?
 ```
 
 **Answer:** 43.2 minutes of downtime or 0.1% error rate

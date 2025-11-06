@@ -37,7 +37,6 @@ Before starting the workshop, ensure you have:
 
 ### Recommended
 - **Bicep CLI** - [Install](https://learn.microsoft.com/azure/azure-resource-manager/bicep/install)
-- **GitHub Copilot** for enhanced coding experience
 - Basic understanding of:
   - REST APIs
   - Containers and Docker
@@ -178,7 +177,6 @@ Each exercise includes:
 
 ### Azure SRE Agent
 - [Azure SRE Agent Documentation](https://learn.microsoft.com/azure/sre-agent/)
-- [GitHub Copilot for Azure](https://learn.microsoft.com/azure/developer/github-copilot-azure)
 
 ### Azure Services
 - [Azure API Management](https://learn.microsoft.com/azure/api-management/)

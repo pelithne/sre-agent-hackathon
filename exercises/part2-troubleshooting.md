@@ -2,7 +2,9 @@
 
 ## Overview
 
-In this exercise, you'll learn how to use Azure SRE Agent (GitHub Copilot for Azure) to diagnose and fix common issues in cloud applications. You'll work through several realistic failure scenarios that SREs encounter in production environments.
+In this exercise, you'll learn how to use Azure SRE Agent to diagnose and fix common issues in cloud applications. Azure SRE Agent is an AI-powered reliability assistant that helps teams diagnose and resolve production issues, reduce operational toil, and lower mean time to resolution (MTTR).
+
+You'll work through several realistic failure scenarios that SREs encounter in production environments, using Azure SRE Agent's natural language interface to investigate and resolve issues.
 
 **Estimated Time:** 60-90 minutes
 
@@ -10,34 +12,57 @@ In this exercise, you'll learn how to use Azure SRE Agent (GitHub Copilot for Az
 
 - Completed [Part 1: Setup](./part1-setup.md)
 - Working infrastructure with API deployed
-- Access to GitHub Copilot for Azure / SRE Agent
+- Azure account with appropriate permissions
 - Your environment variables set from Part 1
 
 ## Learning Objectives
 
 By the end of this exercise, you will:
-- Use SRE Agent to investigate resource health issues
-- Diagnose API connectivity problems
+- Create and configure an Azure SRE Agent
+- Use natural language queries to investigate resource health
+- Diagnose API connectivity problems with AI assistance
 - Troubleshoot database connection failures
-- Analyze performance degradation
-- Fix configuration errors using AI-assisted troubleshooting
+- Analyze performance degradation using SRE Agent
 - Understand Azure diagnostic patterns and tools
 
 ---
 
-## Accessing SRE Agent
+## Setup: Create Azure SRE Agent
 
-### Option 1: VS Code with GitHub Copilot
+Before starting the troubleshooting exercises, you need to create an Azure SRE Agent instance.
 
-1. Open VS Code with GitHub Copilot extension installed
-2. Open the Chat panel (Ctrl+Alt+I or Cmd+Alt+I)
-3. Use the `@azure` agent for Azure-specific questions
+### Step 1: Register Microsoft.App Namespace
 
-### Option 2: Azure Portal Copilot
+```bash
+az provider register --namespace "Microsoft.App"
+```
 
-1. Navigate to [Azure Portal](https://portal.azure.com)
-2. Click the Copilot icon in the top bar
-3. Ask questions about your resources directly
+### Step 2: Create the Agent
+
+1. Navigate to the [Azure Portal](https://aka.ms/sreagent/portal)
+2. Click **Create**
+3. Fill in the agent details:
+   - **Subscription**: Your Azure subscription
+   - **Resource Group**: Create a new one (e.g., `${BASE_NAME}-sre-agent-rg`)
+   - **Agent name**: Choose a name (e.g., `${BASE_NAME}-sre-agent`)
+   - **Region**: Select **East US 2**, **Sweden Central**, or **Australia East**
+
+4. Click **Choose resource groups**
+5. Search for and select your workshop resource group (`${BASE_NAME}-workshop`)
+6. Click **Save**
+7. Click **Create**
+
+> **Note**: The agent can monitor resources in any Azure region, but the agent itself must be deployed in one of the supported regions.
+
+### Step 3: Access the Agent Chat
+
+Once deployment completes:
+
+1. Go to **Azure SRE Agent** in the Azure Portal
+2. Select your agent from the list
+3. The chat interface will open
+
+Test it with: `What can you help me with?`
 
 ---
 
@@ -64,15 +89,17 @@ curl -X POST \
 
 ### Step 2: Gather Initial Information
 
-Ask SRE Agent:
+In your Azure SRE Agent chat interface, ask:
 ```
-"I'm getting 500 errors from my Container App API when making POST requests. 
-The health endpoint returns 200 OK. How should I investigate this?"
+I'm getting 500 errors from my Container App API when making POST requests. 
+The health endpoint returns 200 OK. How should I investigate this?
 ```
+
+The agent will suggest checking logs and provide guidance on diagnostic steps.
 
 ### Step 3: Check Container App Logs
 
-SRE Agent will likely suggest checking logs. Run:
+Based on SRE Agent's guidance, check the logs:
 
 ```bash
 az containerapp logs show \
@@ -81,13 +108,15 @@ az containerapp logs show \
   --tail 50
 ```
 
-### Step 4: Analyze the Error
+### Step 4: Analyze the Error with SRE Agent
 
-You should see errors related to database connectivity. Ask SRE Agent:
+Share the log findings with SRE Agent:
 ```
-"My Container App logs show database connection errors: 
-'could not translate host name'. What could cause this?"
+My Container App logs show database connection errors: 
+'could not translate host name'. What could cause this?
 ```
+
+The agent will help identify potential root causes and suggest investigation steps.
 
 ### Common Root Causes
 
@@ -98,15 +127,17 @@ You should see errors related to database connectivity. Ask SRE Agent:
 
 ### Step 5: Diagnose with SRE Agent
 
-Ask specific questions:
+Ask the agent for specific diagnostic steps:
 ```
-"How can I verify PostgreSQL private endpoint DNS resolution 
-from my Container App in Azure?"
+How can I verify PostgreSQL private endpoint DNS resolution 
+from my Container App in Azure?
 ```
+
+The agent will provide Azure-specific commands and checks.
 
 ### Step 6: Fix the Issue
 
-Depending on what you find, SRE Agent might suggest:
+Follow SRE Agent's recommendations. Common fixes include:
 
 **Check the connection string:**
 ```bash
@@ -149,7 +180,7 @@ curl -X POST \
 - Always check application logs first
 - Connection string errors are common in container deployments
 - VNet integration requires proper DNS configuration
-- SRE Agent can guide you through Azure-specific networking issues
+- Azure SRE Agent provides contextual guidance for Azure-specific networking issues
 
 ---
 
@@ -173,11 +204,14 @@ time curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
 
 ### Step 2: Ask SRE Agent for Investigation Strategy
 
+In the Azure SRE Agent chat, ask:
 ```
-"My API response times are 5-10 seconds, but should be under 200ms. 
+My API response times are 5-10 seconds, but should be under 200ms. 
 I'm using Container Apps, PostgreSQL, and APIM. 
-How should I investigate where the bottleneck is?"
+How should I investigate where the bottleneck is?
 ```
+
+The agent will suggest a diagnostic approach.
 
 ### Step 3: Check Application Insights
 
@@ -200,13 +234,13 @@ az monitor app-insights query \
 
 ### Step 4: Investigate Database Performance
 
-Ask SRE Agent:
+Ask Azure SRE Agent:
 ```
-"Application Insights shows my API endpoints are taking 5+ seconds. 
-How can I check if the PostgreSQL database is the bottleneck?"
+Application Insights shows my API endpoints are taking 5+ seconds. 
+How can I check if the PostgreSQL database is the bottleneck?
 ```
 
-SRE Agent will guide you to check:
+The agent will guide you through checking database metrics:
 
 ```bash
 # Check PostgreSQL metrics
@@ -223,12 +257,12 @@ az monitor metrics list \
 
 ### Step 5: Common Performance Issues
 
-Ask SRE Agent about:
+Ask Azure SRE Agent:
 ```
-"What are common causes of slow PostgreSQL queries in Azure Flexible Server?"
+What are common causes of slow PostgreSQL queries in Azure Flexible Server?
 ```
 
-Potential issues:
+Potential issues the agent may identify:
 1. **Missing indexes** - Database queries scanning full tables
 2. **Under-provisioned compute** - Not enough vCores/memory
 3. **Connection pooling** - Too many connection overhead
@@ -237,10 +271,10 @@ Potential issues:
 
 ### Step 6: Optimize Based on Findings
 
-If database is slow, ask SRE Agent:
+If database is slow, ask Azure SRE Agent:
 ```
-"How can I add indexes to my PostgreSQL database to improve 
-query performance on the 'items' table?"
+How can I add indexes to my PostgreSQL database to improve 
+query performance on the 'items' table?
 ```
 
 If Container App is slow, ask:
@@ -337,12 +371,12 @@ az containerapp logs show \
 
 ### Common Container Startup Issues
 
-Ask SRE Agent:
+Ask Azure SRE Agent:
 ```
-"What are the most common reasons a Container App fails to start in Azure?"
+What are the most common reasons a Container App fails to start in Azure?
 ```
 
-Potential causes:
+Potential causes the agent may identify:
 1. **Image pull errors** - Can't access ACR or image doesn't exist
 2. **Insufficient resources** - Not enough CPU/memory
 3. **Failed health probes** - App doesn't respond to health checks
@@ -351,13 +385,13 @@ Potential causes:
 
 ### Step 6: Diagnose ACR Access Issues
 
-If you see image pull errors, ask:
+If you see image pull errors, ask Azure SRE Agent:
 ```
-"My Container App can't pull from ACR with error 'unauthorized'. 
-I'm using managed identity. What could be wrong?"
+My Container App can't pull from ACR with error 'unauthorized'. 
+I'm using managed identity. What could be wrong?
 ```
 
-Check role assignments:
+Check role assignments based on agent guidance:
 ```bash
 IDENTITY_PRINCIPAL_ID=$(az identity show \
   --name ${BASE_NAME}-dev-identity \
@@ -418,12 +452,15 @@ curl -v -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
   "$APIM_URL/api/items"
 ```
 
-### Step 2: Ask SRE Agent
+### Step 2: Ask Azure SRE Agent
 
+In the Azure SRE Agent chat:
 ```
-"API calls through APIM are timing out after 30 seconds, 
-but direct calls to my backend work. How do I fix APIM timeout settings?"
+API calls through APIM are timing out after 30 seconds, 
+but direct calls to my backend work. How do I fix APIM timeout settings?
 ```
+
+The agent will guide you through checking APIM configuration.
 
 ### Step 3: Check APIM Backend Configuration
 
@@ -441,14 +478,14 @@ az apim api show \
 
 ### Step 4: Check Backend Timeout Settings
 
-Ask SRE Agent:
+Ask Azure SRE Agent:
 ```
-"How do I configure timeout settings for an API in Azure APIM?"
+How do I configure timeout settings for an API in Azure APIM?
 ```
 
 ### Step 5: Update APIM Policy
 
-SRE Agent will guide you to add a timeout policy. Check current policy:
+Follow the agent's guidance to add a timeout policy. Check current policy:
 
 ```bash
 az apim api operation show \
@@ -531,12 +568,15 @@ az containerapp logs show \
   --tail 100 | grep -i "connection"
 ```
 
-### Step 3: Ask SRE Agent
+### Step 3: Ask Azure SRE Agent
 
+In the Azure SRE Agent chat:
 ```
-"My Python FastAPI app is getting 'too many connections' errors 
-from PostgreSQL after load testing. How should I handle this?"
+My Python FastAPI app is getting 'too many connections' errors 
+from PostgreSQL after load testing. How should I handle this?
 ```
+
+The agent will provide guidance on connection management strategies.
 
 ### Step 4: Check PostgreSQL Connection Limits
 
@@ -550,7 +590,7 @@ az postgres flexible-server parameter show \
 
 ### Step 5: Implement Connection Pooling
 
-SRE Agent will suggest using connection pooling in your application. Check if it's configured:
+Based on the agent's recommendations, ensure connection pooling is configured in your application:
 
 ```python
 # In your FastAPI app, ensure proper pooling:
@@ -570,10 +610,12 @@ engine = create_engine(
 
 ### Step 6: Adjust PostgreSQL Settings
 
-Ask SRE Agent:
+Ask Azure SRE Agent:
 ```
-"How can I increase max_connections in Azure PostgreSQL Flexible Server?"
+How can I increase max_connections in Azure PostgreSQL Flexible Server?
 ```
+
+Follow the agent's guidance:
 
 ```bash
 az postgres flexible-server parameter set \
@@ -632,12 +674,15 @@ az monitor app-insights query \
   --output table
 ```
 
-### Step 3: Ask SRE Agent
+### Step 3: Ask Azure SRE Agent
 
+In the Azure SRE Agent chat:
 ```
-"My Container App is running but not sending telemetry to Application Insights. 
-How can I troubleshoot this?"
+My Container App is running but not sending telemetry to Application Insights. 
+How can I troubleshoot this?
 ```
+
+The agent will guide you through verification steps.
 
 ### Step 4: Verify Environment Variables
 
@@ -660,12 +705,12 @@ az containerapp secret list \
 
 ### Step 6: Fix the Configuration
 
-Ask SRE Agent:
+Ask Azure SRE Agent:
 ```
-"How do I update a Container App secret and ensure the app picks up the new value?"
+How do I update a Container App secret and ensure the app picks up the new value?
 ```
 
-Get the correct connection string:
+Get the correct connection string and follow the agent's guidance:
 ```bash
 CORRECT_CONNECTION_STRING=$(az monitor app-insights component show \
   --app $APP_INSIGHTS_NAME \
@@ -729,25 +774,28 @@ az service-health event list \
 
 ### Step 4: Ask About DR Strategy
 
+Ask Azure SRE Agent:
 ```
-"What disaster recovery options do I have for Azure Container Apps 
-and PostgreSQL Flexible Server across regions?"
+What disaster recovery options do I have for Azure Container Apps 
+and PostgreSQL Flexible Server across regions?
 ```
+
+The agent will provide guidance on DR strategies for your architecture.
 
 ### Step 5: Create Resilience Checklist
 
-Ask SRE Agent to help you create:
+Ask Azure SRE Agent to help create a comprehensive plan:
 ```
-"Create a checklist for improving the resilience of my setup including:
+Create a checklist for improving the resilience of my setup including:
 - Multi-region deployment
 - Backup and restore procedures  
 - Health monitoring
-- Failover testing"
+- Failover testing
 ```
 
 ### Key Learnings
 
-- SRE Agent can help plan disaster recovery
+- Azure SRE Agent can help plan disaster recovery strategies
 - Understanding regional dependencies is critical
 - Proactive resilience planning prevents outage impact
 
@@ -871,8 +919,9 @@ What should I check next?"
 
 After completing Part 2, you should be able to:
 
-- [ ] Use SRE Agent to diagnose API failures
-- [ ] Investigate database connection issues
+- [ ] Create and configure Azure SRE Agent
+- [ ] Use natural language queries to diagnose API failures
+- [ ] Investigate database connection issues with AI assistance
 - [ ] Analyze performance problems with Application Insights
 - [ ] Troubleshoot Container App startup failures
 - [ ] Configure APIM timeout policies
@@ -885,14 +934,14 @@ After completing Part 2, you should be able to:
 
 ## What's Next?
 
-**[Part 3: Monitoring & Alerts](./part3-monitoring.md)** - Learn to set up proactive monitoring, configure alerts, and use SRE Agent for incident investigation.
+**[Part 3: Monitoring & Alerts](./part3-monitoring.md)** - Learn to set up proactive monitoring, configure alerts, and use Azure SRE Agent for incident investigation.
 
 ---
 
 ## Additional Resources
 
+- [Azure SRE Agent Documentation](https://learn.microsoft.com/en-us/azure/sre-agent/)
 - [Azure Monitor Documentation](https://docs.microsoft.com/en-us/azure/azure-monitor/)
 - [Container Apps Troubleshooting](https://docs.microsoft.com/en-us/azure/container-apps/troubleshooting)
 - [PostgreSQL Troubleshooting Guide](https://docs.microsoft.com/en-us/azure/postgresql/flexible-server/how-to-troubleshoot-common-connection-issues)
 - [APIM Policy Reference](https://docs.microsoft.com/en-us/azure/api-management/api-management-policies)
-- [GitHub Copilot for Azure](https://learn.microsoft.com/en-us/azure/copilot/)
