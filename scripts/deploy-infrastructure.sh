@@ -121,7 +121,7 @@ fi
 print_header "Deploying Infrastructure"
 
 print_info "Deployment name: ${DEPLOYMENT_NAME}"
-print_info "This will take approximately 15-20 minutes..."
+print_info "This will take approximately 10-15 minutes..."
 echo ""
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

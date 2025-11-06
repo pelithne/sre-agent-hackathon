@@ -7,7 +7,7 @@ This directory contains the Bicep Infrastructure as Code (IaC) templates for the
 The infrastructure deploys a complete cloud-native application stack on Azure with the following components:
 
 ### Core Services
-- **Azure API Management** (Developer tier) - API gateway and management
+- **Azure API Management** (Consumption tier) - API gateway and management
 - **Azure Container Apps** - Serverless container hosting
 - **Azure Database for PostgreSQL** (Flexible Server) - Managed database
 - **Azure Virtual Network** - Network isolation and security
@@ -131,12 +131,12 @@ az deployment group create \
 
 ## Deployment Time
 
-Expected deployment time: **15-20 minutes**
+Expected deployment time: **10-15 minutes**
 
 The longest operations are:
 - PostgreSQL Flexible Server provisioning (~10 minutes)
-- API Management service creation (~8-10 minutes)
 - Container Apps environment setup (~3-5 minutes)
+- API Management Consumption tier (~1-2 minutes)
 
 ## Outputs
 
@@ -174,15 +174,17 @@ Example:
 ## Cost Estimation
 
 Approximate monthly costs (East US region):
-- API Management (Developer): ~$50/month
+- API Management (Consumption): ~$0-5/month (pay-per-use: $0.035/10K calls + $0.06/GB)
 - Container Apps: ~$15-30/month (depends on usage)
 - PostgreSQL (Burstable B1ms): ~$15-20/month
 - Application Insights: ~$5-10/month (depends on data volume)
 - Log Analytics: ~$5-10/month (depends on data volume)
 
-**Total: ~$90-120/month**
+**Total: ~$40-70/month**
 
-For workshop purposes (a few hours), costs will be minimal (< $5).
+For workshop purposes (a few hours), costs will be minimal (< $2).
+
+**Note:** Consumption tier APIM is significantly more cost-effective for workshops and development scenarios.
 
 ## Security Considerations
 

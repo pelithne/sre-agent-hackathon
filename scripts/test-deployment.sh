@@ -47,7 +47,7 @@ echo -e "${GREEN}✓ Resource group ready${NC}"
 echo ""
 
 # Deploy infrastructure
-echo -e "${YELLOW}Deploying infrastructure (this will take 15-20 minutes)...${NC}"
+echo -e "${YELLOW}Deploying infrastructure (this will take 10-15 minutes)...${NC}"
 echo ""
 
 START_TIME=$(date +%s)

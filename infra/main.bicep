@@ -326,8 +326,8 @@ resource apim 'Microsoft.ApiManagement/service@2023-09-01-preview' = {
   location: location
   tags: tags
   sku: {
-    name: 'Developer'
-    capacity: 1
+    name: 'Consumption'
+    capacity: 0  // Consumption tier uses 0 capacity
   }
   identity: {
     type: 'SystemAssigned'
@@ -335,7 +335,6 @@ resource apim 'Microsoft.ApiManagement/service@2023-09-01-preview' = {
   properties: {
     publisherEmail: 'admin@contoso.com'
     publisherName: 'SRE Workshop'
-    virtualNetworkType: 'None' // External mode for Developer tier
   }
 }
 

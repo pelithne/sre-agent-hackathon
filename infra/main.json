@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.30.23.60470",
-      "templateHash": "1078937255354219906"
+      "templateHash": "2657834440892347595"
     }
   },
   "parameters": {
@@ -101,15 +101,7 @@
           {
             "name": "container-apps-subnet",
             "properties": {
-              "addressPrefix": "[variables('containerAppsSubnetPrefix')]",
-              "delegations": [
-                {
-                  "name": "Microsoft.App.environments",
-                  "properties": {
-                    "serviceName": "Microsoft.App/environments"
-                  }
-                }
-              ]
+              "addressPrefix": "[variables('containerAppsSubnetPrefix')]"
             }
           },
           {
@@ -361,16 +353,15 @@
       "location": "[parameters('location')]",
       "tags": "[parameters('tags')]",
       "sku": {
-        "name": "Developer",
-        "capacity": 1
+        "name": "Consumption",
+        "capacity": 0
       },
       "identity": {
         "type": "SystemAssigned"
       },
       "properties": {
         "publisherEmail": "admin@contoso.com",
-        "publisherName": "SRE Workshop",
-        "virtualNetworkType": "None"
+        "publisherName": "SRE Workshop"
       }
     },
     {

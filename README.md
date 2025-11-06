@@ -9,7 +9,7 @@ In this workshop, you'll build a complete cloud-native application on Azure and 
 ### What You'll Build
 
 A production-like architecture consisting of:
-- **Azure API Management** (Developer tier) - API gateway and management layer
+- **Azure API Management** (Consumption tier) - API gateway and management layer
 - **Azure Container Apps** - Hosting a RESTful API application
 - **Azure Database for PostgreSQL** - Data persistence layer
 - **Azure Monitor** - Observability and alerting
