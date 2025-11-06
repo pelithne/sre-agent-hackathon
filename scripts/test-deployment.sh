@@ -18,8 +18,8 @@ echo -e "${BLUE}================================================================
 echo ""
 
 # Configuration
-TEST_RG="sre-agent-test-rg"
-LOCATION="eastus"
+TEST_RG="sre-agent-test-v2-rg"
+LOCATION="swedencentral"
 POSTGRES_PASSWORD="SecureTestPass123!"
 DEPLOYMENT_NAME="test-deployment-$(date +%Y%m%d-%H%M%S)"
 
@@ -52,12 +52,14 @@ echo ""
 
 START_TIME=$(date +%s)
 
+# Deploy without parameters file to allow password override
 az deployment group create \
   --name "$DEPLOYMENT_NAME" \
   --resource-group "$TEST_RG" \
   --template-file infra/main.bicep \
-  --parameters infra/main.bicepparam \
   --parameters postgresAdminPassword="$POSTGRES_PASSWORD" \
+  --parameters environmentName=test \
+  --parameters baseName=sretest \
   --verbose
 
 END_TIME=$(date +%s)
