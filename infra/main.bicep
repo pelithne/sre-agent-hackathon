@@ -41,12 +41,8 @@ param postgresAdminPassword string
 @description('Container image for the API (default: placeholder hello-world image)')
 param containerImage string = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
 
-@description('Azure Container Registry name (optional, only needed for custom images)')
+@description('Azure Container Registry name (optional, only needed for custom images from ACR)')
 param acrName string = ''
-
-@description('Azure Container Registry password (optional, only needed for custom images)')
-@secure()
-param acrPassword string = ''
 
 @description('Tags to apply to all resources')
 param tags object = {
@@ -88,6 +84,9 @@ resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-
   location: location
   tags: tags
 }
+
+// Note: Role assignment for ACR pull must be granted manually or via separate deployment
+// Command: az role assignment create --assignee <managed-identity-principal-id> --role AcrPull --scope /subscriptions/<sub-id>/resourceGroups/<acr-rg>/providers/Microsoft.ContainerRegistry/registries/<acr-name>
 
 // Virtual Network
 resource vnet 'Microsoft.Network/virtualNetworks@2023-11-01' = {
@@ -279,28 +278,19 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
       registries: !empty(acrName) ? [
         {
           server: '${acrName}.azurecr.io'
-          username: acrName
-          passwordSecretRef: 'acr-password'
+          identity: managedIdentity.id
         }
       ] : []
-      secrets: concat(
-        [
-          {
-            name: 'db-connection-string'
-            value: 'postgresql://${postgresAdminUsername}:${postgresAdminPassword}@${postgresServer.properties.fullyQualifiedDomainName}:5432/workshopdb?sslmode=require'
-          }
-          {
-            name: 'appinsights-connection-string'
-            value: appInsights.properties.ConnectionString
-          }
-        ],
-        !empty(acrPassword) ? [
-          {
-            name: 'acr-password'
-            value: acrPassword
-          }
-        ] : []
-      )
+      secrets: [
+        {
+          name: 'db-connection-string'
+          value: 'postgresql://${postgresAdminUsername}:${postgresAdminPassword}@${postgresServer.properties.fullyQualifiedDomainName}:5432/workshopdb?sslmode=require'
+        }
+        {
+          name: 'appinsights-connection-string'
+          value: appInsights.properties.ConnectionString
+        }
+      ]
     }
     template: {
       containers: [
