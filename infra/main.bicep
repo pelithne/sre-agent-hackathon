@@ -262,7 +262,7 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
     configuration: {
       ingress: {
         external: false
-        targetPort: 8000
+        targetPort: 80  // Changed to 80 to match the placeholder hello-world image
         transport: 'http'
         allowInsecure: false
       }
@@ -281,7 +281,7 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
       containers: [
         {
           name: 'api-container'
-          image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest' // Placeholder image
+          image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest' // Placeholder image (listens on port 80)
           resources: {
             cpu: json('0.5')
             memory: '1Gi'
@@ -295,10 +295,7 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
               name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
               secretRef: 'appinsights-connection-string'
             }
-            {
-              name: 'PORT'
-              value: '8000'
-            }
+            // PORT removed - the hello-world image ignores this and always uses port 80
           ]
         }
       ]
