@@ -58,6 +58,7 @@ async def lifespan(app: FastAPI):
     """Lifecycle management for the FastAPI app"""
     # Startup
     logger.info("Starting Workshop API...")
+    logger.info(f"SLOW_MODE_DELAY configured: {SLOW_MODE_DELAY}s")
     logger.info(f"Port: {PORT}")
     logger.info(f"Database configured: {bool(DATABASE_URL)}")
     logger.info(f"Application Insights configured: {bool(APPLICATIONINSIGHTS_CONNECTION_STRING)}")
@@ -189,6 +190,7 @@ async def list_items(skip: int = 0, limit: int = 100):
 @app.get("/items/{item_id}", response_model=ItemResponse, tags=["Items"])
 async def get_item(item_id: int):
     """Get a specific item by ID"""
+    apply_slow_mode()  # Apply artificial delay if SLOW_MODE is enabled
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
