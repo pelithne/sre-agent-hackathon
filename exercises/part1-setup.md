@@ -80,13 +80,9 @@ If you see "No workshop environment file found", that's normal for first-time se
 Choose a unique base name (3-15 characters, lowercase) that will be used for all resources:
 
 ```bash
-# Set and persist variables - customize the BASE_NAME with your initials
-BASE_NAME="sre<your-initials>"  # Must be 3-15 characters, lowercase
-LOCATION="swedencentral"  # Or your preferred region
-
-# Use the helper function to set and persist variables
-set_var "BASE_NAME" "$BASE_NAME"
-set_var "LOCATION" "$LOCATION"
+# Set and persist variables using the workshop helper - customize with your initials
+set_var "BASE_NAME" "sre<your-initials>"  # Must be 3-15 characters, lowercase
+set_var "LOCATION" "swedencentral"        # Or your preferred region
 set_var "RESOURCE_GROUP" "${BASE_NAME}-workshop"
 
 # Create resource group
@@ -97,11 +93,21 @@ az group create \
 
 **Example:**
 ```bash
-BASE_NAME="srepk"
-set_var "BASE_NAME" "$BASE_NAME"
+set_var "BASE_NAME" "srepk"
 set_var "LOCATION" "swedencentral"
 set_var "RESOURCE_GROUP" "${BASE_NAME}-workshop"
 ```
+
+> **Alternative: Traditional Environment Variables**
+> 
+> If you prefer to work with traditional environment variables instead of the workshop helper:
+> ```bash
+> export BASE_NAME="srepk"
+> export LOCATION="swedencentral"
+> export RESOURCE_GROUP="${BASE_NAME}-workshop"
+> ```
+> 
+> **Note:** With traditional variables, you'll need to manually re-set them if your shell session times out.
 
 > **Note:** The `BASE_NAME` will be used to generate names for all Azure resources (ACR, Container App, APIM, etc.) to ensure they are unique and consistently named. The `set_var` function automatically persists variables to `~/.workshop-env` so they survive shell timeouts.
 
@@ -112,16 +118,19 @@ set_var "RESOURCE_GROUP" "${BASE_NAME}-workshop"
 Create an Azure Container Registry to store the workshop API container image:
 
 ```bash
-ACR_NAME="${BASE_NAME}acr$RANDOM"
+# Generate a unique ACR name and persist it
+set_var "ACR_NAME" "${BASE_NAME}acr$RANDOM"
 
 az acr create \
   --resource-group $RESOURCE_GROUP \
   --name $ACR_NAME \
   --sku Basic
-
-# Persist the ACR name for later use
-set_var "ACR_NAME" "$ACR_NAME"
 ```
+
+> **Alternative: Traditional Environment Variables**
+> ```bash
+> export ACR_NAME="${BASE_NAME}acr$RANDOM"
+> ```
 
 > **Note:** This ACR will use managed identity authentication. Admin credentials are not needed since the Container App will authenticate using its managed identity (configured in Step 8).
 
@@ -179,7 +188,7 @@ az deployment group list \
   -o table
 
 # Save your deployment name to a variable (use the most recent one from the list above)
-DEPLOYMENT_NAME="workshop-deployment-20251106-123456"  # Replace with your actual deployment name
+set_var "DEPLOYMENT_NAME" "workshop-deployment-20251106-123456"  # Replace with your actual deployment name
 
 # Check overall status
 az deployment group show \
@@ -237,31 +246,40 @@ az apim api list \
 ## Step 9: Get APIM Gateway URL and Subscription Key
 
 ```bash
-# Get APIM gateway URL
+# Get APIM gateway URL and save it
 APIM_URL=$(az apim show \
   --resource-group $RESOURCE_GROUP \
   --name $APIM_NAME \
   --query "gatewayUrl" -o tsv)
 
 echo "APIM Gateway URL: $APIM_URL"
+set_var "APIM_URL" "$APIM_URL"
 
-# Get subscription key
+# Get subscription key and save it  
 SUBSCRIPTION_KEY=$(az rest \
   --method post \
   --url "$(az apim show --resource-group $RESOURCE_GROUP --name $APIM_NAME --query id -o tsv)/subscriptions/master/listSecrets?api-version=2023-05-01-preview" \
   --query "primaryKey" -o tsv)
 
 echo "Subscription Key: $SUBSCRIPTION_KEY"
-
-# Save important variables for later use
-set_var "DEPLOYMENT_NAME" "$DEPLOYMENT_NAME"
-set_var "APIM_URL" "$APIM_URL"
 set_var "SUBSCRIPTION_KEY" "$SUBSCRIPTION_KEY"
+
+# Save deployment name as well
+set_var "DEPLOYMENT_NAME" "$DEPLOYMENT_NAME"
 
 # Verify all required variables are set and persisted
 echo ""
 verify_vars
 ```
+
+> **Alternative: Traditional Environment Variables**
+> 
+> If you're using traditional environment variables instead of the workshop helper:
+> ```bash
+> export APIM_URL="<your-apim-gateway-url>"
+> export SUBSCRIPTION_KEY="<your-subscription-key>"
+> export DEPLOYMENT_NAME="<your-deployment-name>"
+> ```
 
 ---
 
@@ -528,8 +546,13 @@ Now that your infrastructure is deployed and tested, you're ready for:
 
 ### Environment Variables
 
-Save these for use in later exercises:
+**Recommended:** Variables are automatically saved when using the workshop helper script.
+```bash
+# All variables persist automatically with:
+source scripts/workshop-env.sh
+```
 
+**Alternative:** If using traditional environment variables, save these for later exercises:
 ```bash
 export BASE_NAME="sre<your-initials>"
 export RESOURCE_GROUP="${BASE_NAME}-workshop"

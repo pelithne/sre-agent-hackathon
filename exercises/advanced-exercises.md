@@ -468,9 +468,9 @@ deploy to a secondary region using my existing Bicep templates.
 ```
 
 ```bash
-# Deploy to secondary region
-SECONDARY_REGION="westeurope"
-SECONDARY_RG="${RESOURCE_GROUP}-dr"
+# Set up secondary region variables
+set_var "SECONDARY_REGION" "westeurope"
+set_var "SECONDARY_RG" "${RESOURCE_GROUP}-dr"
 
 # Create DR resource group
 az group create --name $SECONDARY_RG --location $SECONDARY_REGION
@@ -485,6 +485,12 @@ az deployment group create \
   --parameters location=$SECONDARY_REGION \
   --parameters containerImage=sreagentacr574f2c.azurecr.io/workshop-api:v1.0.1
 ```
+
+> **Alternative: Traditional Environment Variables**
+> ```bash
+> export SECONDARY_REGION="westeurope"
+> export SECONDARY_RG="${RESOURCE_GROUP}-dr"
+> ```
 
 ### Step 5: Measure RTO/RPO
 
@@ -645,15 +651,21 @@ az redis create \
   --vm-size c0 \
   --enable-non-ssl-port false
 
-# Get Redis connection string
+# Get Redis connection string and store it
 REDIS_KEY=$(az redis list-keys \
   --name "${BASE_NAME}-cache" \
   --resource-group $RESOURCE_GROUP \
   --query primaryKey -o tsv)
 
-REDIS_HOST="${BASE_NAME}-cache.redis.cache.windows.net"
-REDIS_CONNECTION_STRING="rediss://:${REDIS_KEY}@${REDIS_HOST}:6380"
+set_var "REDIS_HOST" "${BASE_NAME}-cache.redis.cache.windows.net"
+set_var "REDIS_CONNECTION_STRING" "rediss://:${REDIS_KEY}@${REDIS_HOST}:6380"
 ```
+
+> **Alternative: Traditional Environment Variables**
+> ```bash
+> export REDIS_HOST="${BASE_NAME}-cache.redis.cache.windows.net"
+> export REDIS_CONNECTION_STRING="rediss://:${REDIS_KEY}@${REDIS_HOST}:6380"
+> ```
 
 Update Container App with Redis:
 

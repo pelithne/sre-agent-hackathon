@@ -217,7 +217,7 @@ PSQL_HOST=$(az postgres flexible-server show \
   --query "fullyQualifiedDomainName" -o tsv)
 
 # Construct the correct connection string (use the password from your deployment)
-CORRECT_DB_URL="postgresql://sqladmin:YourSecurePassword123@${PSQL_HOST}:5432/workshopdb?sslmode=require"
+set_var "CORRECT_DB_URL" "postgresql://sqladmin:YourSecurePassword123@${PSQL_HOST}:5432/workshopdb?sslmode=require"
 
 # Update the secret with the correct connection string
 az containerapp secret set \
@@ -231,6 +231,11 @@ az containerapp update \
   --resource-group $RESOURCE_GROUP \
   --set-env-vars "FORCE_UPDATE=$(date +%s)"
 ```
+
+> **Alternative: Traditional Environment Variables**
+> ```bash
+> export CORRECT_DB_URL="postgresql://sqladmin:YourSecurePassword123@${PSQL_HOST}:5432/workshopdb?sslmode=require"
+> ```
 
 Wait about 30 seconds for the new revision to deploy.
 
@@ -468,9 +473,9 @@ Diagnose why the container won't start and fix it.
 ### Step 1: Reproduce the Issue
 
 ```bash
-# Get the current API image
+# Get the current API image and store it
 ACR_NAME=$(az acr list --resource-group $RESOURCE_GROUP --query "[0].name" -o tsv)
-API_IMAGE="${ACR_NAME}.azurecr.io/workshop-api:v1.0.1"
+set_var "API_IMAGE" "${ACR_NAME}.azurecr.io/workshop-api:v1.0.1"
 
 # Break the app by removing the required DATABASE_URL environment variable
 # The API will fail health checks and crash on startup
@@ -480,6 +485,12 @@ az containerapp update \
   --image $API_IMAGE \
   --remove-env-vars "DATABASE_URL"
 ```
+
+> **Alternative: Traditional Environment Variables**
+> ```bash
+> ACR_NAME=$(az acr list --resource-group $RESOURCE_GROUP --query "[0].name" -o tsv)
+> export API_IMAGE="${ACR_NAME}.azurecr.io/workshop-api:v1.0.1"
+> ```
 
 Wait about 60 seconds for the new revision to deploy. The container will start but fail health checks because it can't connect to the database.
 
