@@ -269,9 +269,10 @@ Wait about 30 seconds for the new revision to deploy.
 ### Step 2: Measure Current Performance
 
 ```bash
-# Time a simple GET request
-time curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
-  "$APIM_URL/api/items" > /dev/null
+# Time a simple GET request - look at the "time_total" value
+curl -w "\nTime: %{time_total}s\n" -o /dev/null -s \
+  -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
+  "$APIM_URL/api/items"
 ```
 
 Run this a few times to see the response time. You should notice slower responses due to resource constraints.
@@ -381,9 +382,10 @@ Wait about 30 seconds for the new revision to deploy.
 Test the response time again:
 
 ```bash
-# Time a simple GET request
-time curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
-  "$APIM_URL/api/items" > /dev/null
+# Time a simple GET request - look at the "time_total" value
+curl -w "\nTime: %{time_total}s\n" -o /dev/null -s \
+  -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
+  "$APIM_URL/api/items"
 ```
 
 Response time should be back to normal (under 200ms).
@@ -424,8 +426,9 @@ az containerapp update \
 ```bash
 # Run multiple requests and measure
 for i in {1..10}; do
-  time curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
-    "$APIM_URL/api/items" > /dev/null
+  curl -w "Request $i - Time: %{time_total}s\n" -o /dev/null -s \
+    -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
+    "$APIM_URL/api/items"
 done
 ```
 
