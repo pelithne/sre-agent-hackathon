@@ -57,15 +57,37 @@ az account show
 
 ---
 
-## Step 3: Create Resource Group
+## Step 3: Setup Workshop Environment Helper
+
+Load the workshop environment helper that will automatically persist variables across shell sessions:
+
+```bash
+# Source the workshop environment helper
+source scripts/workshop-env.sh
+
+# This will:
+# - Load any existing workshop variables from ~/.workshop-env
+# - Provide functions for setting persistent variables
+# - Ensure variables survive shell timeouts and new sessions
+```
+
+If you see "No workshop environment file found", that's normal for first-time setup.
+
+---
+
+## Step 4: Create Resource Group
 
 Choose a unique base name (3-15 characters, lowercase) that will be used for all resources:
 
 ```bash
-# Set variables - customize the BASE_NAME with your initials
+# Set and persist variables - customize the BASE_NAME with your initials
 BASE_NAME="sre<your-initials>"  # Must be 3-15 characters, lowercase
 LOCATION="swedencentral"  # Or your preferred region
-RESOURCE_GROUP="${BASE_NAME}-workshop"
+
+# Use the helper function to set and persist variables
+set_workshop_var "BASE_NAME" "$BASE_NAME"
+set_workshop_var "LOCATION" "$LOCATION"
+set_workshop_var "RESOURCE_GROUP" "${BASE_NAME}-workshop"
 
 # Create resource group
 az group create \
@@ -76,14 +98,16 @@ az group create \
 **Example:**
 ```bash
 BASE_NAME="srepk"
-RESOURCE_GROUP="srepk-workshop"
+set_workshop_var "BASE_NAME" "$BASE_NAME"
+set_workshop_var "LOCATION" "swedencentral"
+set_workshop_var "RESOURCE_GROUP" "${BASE_NAME}-workshop"
 ```
 
-> **Note:** The `BASE_NAME` will be used to generate names for all Azure resources (ACR, Container App, APIM, etc.) to ensure they are unique and consistently named.
+> **Note:** The `BASE_NAME` will be used to generate names for all Azure resources (ACR, Container App, APIM, etc.) to ensure they are unique and consistently named. The `set_workshop_var` function automatically persists variables to `~/.workshop-env` so they survive shell timeouts.
 
 ---
 
-## Step 4: Create Azure Container Registry
+## Step 5: Create Azure Container Registry
 
 Create an Azure Container Registry to store the workshop API container image:
 
@@ -94,9 +118,12 @@ az acr create \
   --resource-group $RESOURCE_GROUP \
   --name $ACR_NAME \
   --sku Basic
+
+# Persist the ACR name for later use
+set_workshop_var "ACR_NAME" "$ACR_NAME"
 ```
 
-> **Note:** This ACR will use managed identity authentication. Admin credentials are not needed since the Container App will authenticate using its managed identity (configured in Step 7).
+> **Note:** This ACR will use managed identity authentication. Admin credentials are not needed since the Container App will authenticate using its managed identity (configured in Step 8).
 
 ---
 
@@ -226,12 +253,14 @@ SUBSCRIPTION_KEY=$(az rest \
 
 echo "Subscription Key: $SUBSCRIPTION_KEY"
 
-# Save for later use
-echo "export BASE_NAME=$BASE_NAME" >> ~/.workshop-env
-echo "export RESOURCE_GROUP=$RESOURCE_GROUP" >> ~/.workshop-env
-echo "export DEPLOYMENT_NAME=$DEPLOYMENT_NAME" >> ~/.workshop-env
-echo "export APIM_URL=$APIM_URL" >> ~/.workshop-env
-echo "export SUBSCRIPTION_KEY=$SUBSCRIPTION_KEY" >> ~/.workshop-env
+# Save important variables for later use
+set_workshop_var "DEPLOYMENT_NAME" "$DEPLOYMENT_NAME"
+set_workshop_var "APIM_URL" "$APIM_URL"
+set_workshop_var "SUBSCRIPTION_KEY" "$SUBSCRIPTION_KEY"
+
+# Verify all required variables are set and persisted
+echo ""
+verify_workshop_vars
 ```
 
 ---

@@ -20,14 +20,26 @@ You'll work through several realistic failure scenarios that SREs encounter in p
 If you're in a new terminal session, reload the environment variables from Part 1:
 
 ```bash
-# Load saved environment variables
-source ~/.workshop-env
+# Load the workshop environment helper and variables
+source scripts/workshop-env.sh
 
-# Or set them manually if needed:
-export BASE_NAME="sre<your-initials>"
-export RESOURCE_GROUP="${BASE_NAME}-workshop"
-export APIM_URL="<your-apim-gateway-url>"
-export SUBSCRIPTION_KEY="<your-subscription-key>"
+# This will automatically:
+# - Load all saved variables from ~/.workshop-env
+# - Display current workshop variables
+# - Provide helper functions for managing variables
+```
+
+If variables are missing, you can manually set them:
+
+```bash
+# Set variables manually if needed
+set_workshop_var "BASE_NAME" "sre<your-initials>"
+set_workshop_var "RESOURCE_GROUP" "${BASE_NAME}-workshop"
+set_workshop_var "APIM_URL" "<your-apim-gateway-url>"
+set_workshop_var "SUBSCRIPTION_KEY" "<your-subscription-key>"
+
+# Verify all required variables are set
+verify_workshop_vars
 ```
 
 > **Tip**: To retrieve your APIM URL and subscription key if you've lost them, see the commands in Part 1, Step 9.
