@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #======================================================================================================
-# Build and Push Workshop API to Azure Container Registry
+# Build and Push Workshop API to Azure Container Registry using ACR Build Tasks
 #======================================================================================================
 
 set -e
@@ -19,7 +19,7 @@ ACR_NAME="${ACR_NAME:-}"
 RESOURCE_GROUP="${RESOURCE_GROUP:-}"
 
 echo "============================================================================"
-echo " Workshop API - Build and Push to ACR"
+echo " Workshop API - Build and Push to ACR using ACR Build Tasks"
 echo "============================================================================"
 echo ""
 
@@ -31,50 +31,29 @@ if [ -z "$ACR_NAME" ]; then
     exit 1
 fi
 
-# Navigate to API directory
-cd "$(dirname "$0")/../src/api"
+# Navigate to repo root
+cd "$(dirname "$0")/.."
 
-echo "→ Building Docker image..."
-docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
+# Build and push using ACR build tasks
+echo "→ Building and pushing image using ACR build tasks..."
+ACR_IMAGE="${IMAGE_NAME}:${IMAGE_TAG}"
+az acr build \
+  --registry ${ACR_NAME} \
+  --image ${ACR_IMAGE} \
+  --file src/api/Dockerfile \
+  src/api
+
 if [ $? -ne 0 ]; then
-    echo -e "${RED}✗ Docker build failed${NC}"
+    echo -e "${RED}✗ ACR build failed${NC}"
     exit 1
 fi
-echo -e "${GREEN}✓ Docker image built successfully${NC}"
-echo ""
 
-# Tag for ACR
-ACR_IMAGE="${ACR_NAME}.azurecr.io/${IMAGE_NAME}:${IMAGE_TAG}"
-echo "→ Tagging image for ACR: ${ACR_IMAGE}"
-docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${ACR_IMAGE}
-echo -e "${GREEN}✓ Image tagged${NC}"
 echo ""
-
-# Login to ACR
-echo "→ Logging in to Azure Container Registry..."
-az acr login --name ${ACR_NAME}
-if [ $? -ne 0 ]; then
-    echo -e "${RED}✗ ACR login failed${NC}"
-    exit 1
-fi
-echo -e "${GREEN}✓ Logged in to ACR${NC}"
-echo ""
-
-# Push to ACR
-echo "→ Pushing image to ACR..."
-docker push ${ACR_IMAGE}
-if [ $? -ne 0 ]; then
-    echo -e "${RED}✗ Docker push failed${NC}"
-    exit 1
-fi
-echo -e "${GREEN}✓ Image pushed successfully${NC}"
-echo ""
-
 echo "============================================================================"
 echo -e "${GREEN} Build and Push Complete!${NC}"
 echo "============================================================================"
 echo ""
-echo "Image: ${ACR_IMAGE}"
+echo "Image: ${ACR_NAME}.azurecr.io/${ACR_IMAGE}"
 echo ""
 echo "Next steps:"
 echo "  1. Update infra/main.bicepparam with the new image:"

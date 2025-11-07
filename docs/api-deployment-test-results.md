@@ -21,30 +21,23 @@ az acr create --name sreagentacr574f2c --sku Basic --location swedencentral
 - ACR Login Server: `sreagentacr574f2c.azurecr.io`
 - Provisioning State: Succeeded
 
-### 2. Docker Image Build ✅
-**Action**: Built workshop-api Docker image locally
+### 2. Image Build and Push to ACR ✅
+**Action**: Built and pushed workshop-api image using ACR build tasks
 ```bash
-cd src/api
-docker build -t workshop-api:v1.0.0 .
-```
-
-**Result**: ✅ Success
-- Image size: 468MB
-- Build time: ~18 seconds (with cached layers)
-- All dependencies installed successfully
-
-### 3. Image Push to ACR ✅
-**Action**: Pushed image to ACR using build script
-```bash
-ACR_NAME=sreagentacr574f2c ./scripts/build-and-push-api.sh v1.0.0
+az acr build \
+  --registry sreagentacr574f2c \
+  --image workshop-api:v1.0.0 \
+  --file src/api/Dockerfile \
+  src/api
 ```
 
 **Result**: ✅ Success
 - Image: `sreagentacr574f2c.azurecr.io/workshop-api:v1.0.0`
-- Digest: `sha256:e90c50e2478427675fdd5a2d96fae46f6919be3ca200da91ffa0f06a62cb38e9`
-- Push completed successfully
+- Build time: ~30 seconds (cloud build)
+- All dependencies installed successfully
+- Image automatically pushed to ACR
 
-### 4. ACR Credentials Configuration ✅
+### 3. ACR Credentials Configuration ✅
 **Action**: Configured Container App with ACR credentials
 ```bash
 az containerapp registry set --server sreagentacr574f2c.azurecr.io
@@ -172,11 +165,10 @@ Container Apps platform performs automatic health probes:
 | Test Step | Status | Duration | Notes |
 |-----------|--------|----------|-------|
 | ACR Setup | ✅ Pass | ~30s | Basic SKU sufficient |
-| Docker Build | ✅ Pass | ~18s | Cached layers helped |
-| Image Push v1.0.0 | ✅ Pass | ~45s | Initial push |
+| ACR Build v1.0.0 | ✅ Pass | ~30s | Cloud build |
 | Container Update v1.0.0 | ❌ Fail | ~2min | Import error |
 | Code Fix | ✅ Pass | ~5min | Removed middleware |
-| Image Push v1.0.1 | ✅ Pass | ~40s | Fixed version |
+| ACR Build v1.0.1 | ✅ Pass | ~30s | Fixed version |
 | Container Update v1.0.1 | ✅ Pass | ~2min | Healthy! |
 | Health Validation | ✅ Pass | ~10s | All checks green |
 

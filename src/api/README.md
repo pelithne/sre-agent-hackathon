@@ -77,14 +77,28 @@ python main.py
 - API: http://localhost:8000
 - Swagger docs: http://localhost:8000/docs
 
-## Docker
+## Azure Container Registry
 
-### Build the image
+### Build and push to ACR using ACR build tasks
+```bash
+# Build and push in one command (no Docker required)
+az acr build \
+  --registry <your-acr-name> \
+  --image workshop-api:1.0.0 \
+  --file Dockerfile \
+  .
+```
+
+This builds the image in Azure and pushes it directly to ACR. No local Docker installation required.
+
+### Alternative: Local Docker build (if you have Docker installed)
+
+Build the image locally:
 ```bash
 docker build -t workshop-api:latest .
 ```
 
-### Run the container
+Run the container locally:
 ```bash
 docker run -d \
   -p 8000:8000 \
@@ -94,26 +108,14 @@ docker run -d \
   workshop-api:latest
 ```
 
-### Check logs
+Check logs:
 ```bash
 docker logs workshop-api
 ```
 
-### Test health endpoint
+Test health endpoint:
 ```bash
 curl http://localhost:8000/health
-```
-
-## Azure Container Registry
-
-### Build and push to ACR
-```bash
-# Login to ACR
-az acr login --name <your-acr-name>
-
-# Build and push
-docker build -t <your-acr-name>.azurecr.io/workshop-api:1.0.0 .
-docker push <your-acr-name>.azurecr.io/workshop-api:1.0.0
 ```
 
 ## API Usage Examples
