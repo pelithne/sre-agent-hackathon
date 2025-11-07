@@ -13,6 +13,18 @@ In this exercise, you'll learn to set up proactive monitoring and alerting for y
 - Application Insights configured
 - Azure SRE Agent created and configured (from Part 2)
 
+### Load Environment Variables
+
+If you're in a new terminal session, load your workshop environment:
+
+```bash
+# Load the workshop environment helper and variables
+source scripts/workshop-env.sh
+
+# Verify all required variables are set
+verify_vars
+```
+
 ## Learning Objectives
 
 By the end of this exercise, you will:

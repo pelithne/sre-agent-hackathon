@@ -44,7 +44,7 @@ Familiarity with these Azure services is helpful but not required:
                          ▼
               ┌──────────────────────┐
               │   API Management     │
-              │  (Developer Tier)    │
+              │  (Consumption Tier)  │
               └──────────┬───────────┘
                          │
                          ▼
@@ -73,6 +73,30 @@ Familiarity with these Azure services is helpful but not required:
 - **Managed Database**: PostgreSQL Flexible Server provides automated backups and high availability
 - **Observability**: Integrated monitoring with Application Insights and Azure Monitor
 - **Security**: Managed identities for secure service-to-service authentication
+
+## Important: Environment Variable Management
+
+This workshop includes a **persistent environment variable system** designed to handle shell timeouts and session interruptions common in cloud development environments.
+
+### Key Features
+- **Automatic persistence** of variables to `~/.workshop-env`
+- **Shell timeout resilience** (Azure Cloud Shell, Codespaces, SSH sessions)
+- **Multi-session support** - resume work in new terminals
+- **Built-in verification** to ensure required variables are set
+
+### Quick Start
+```bash
+# Always start by loading the workshop environment
+source scripts/workshop-env.sh
+
+# Set variables with automatic persistence
+set_var "BASE_NAME" "srepk"
+
+# Verify all required variables
+verify_vars
+```
+
+📖 **See [Environment Variables Guide](./docs/environment-variables.md) for complete documentation**
 
 ## Workshop Structure
 
