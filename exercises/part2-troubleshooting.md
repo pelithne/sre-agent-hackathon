@@ -93,7 +93,32 @@ Users are reporting that the API returns 500 Internal Server Error when trying t
 
 Investigate and fix the issue using SRE Agent.
 
-### Step 1: Reproduce the Issue
+### Step 1: Simulate the Issue
+
+First, let's break the database connection to simulate the problem:
+
+```bash
+# Get the PostgreSQL server name
+PSQL_SERVER=$(az postgres flexible-server list \
+  --resource-group $RESOURCE_GROUP \
+  --query "[0].name" -o tsv)
+
+# Break the connection by updating the connection string with an invalid hostname
+az containerapp secret set \
+  --name ${BASE_NAME}-dev-api \
+  --resource-group $RESOURCE_GROUP \
+  --secrets "db-connection-string=postgresql://invalid-host:5432/workshopdb"
+
+# Force creation of a new revision by updating with a dummy environment variable
+az containerapp update \
+  --name ${BASE_NAME}-dev-api \
+  --resource-group $RESOURCE_GROUP \
+  --set-env-vars "FORCE_UPDATE=$(date +%s)"
+```
+
+Wait about 30 seconds for the new revision to deploy, then proceed.
+
+### Step 2: Reproduce the Issue
 
 First, verify your environment variables are set:
 
@@ -115,7 +140,7 @@ curl -X POST \
   "$APIM_URL/api/items"
 ```
 
-### Step 2: Gather Initial Information
+### Step 3: Gather Initial Information
 
 In your Azure SRE Agent chat interface, ask:
 ```
@@ -125,7 +150,7 @@ The health endpoint returns 200 OK. How should I investigate this?
 
 The agent will suggest checking logs and provide guidance on diagnostic steps.
 
-### Step 3: Check Container App Logs
+### Step 4: Check Container App Logs
 
 Based on SRE Agent's guidance, check the logs:
 
@@ -136,7 +161,7 @@ az containerapp logs show \
   --tail 50
 ```
 
-### Step 4: Analyze the Error with SRE Agent
+### Step 5: Analyze the Error with SRE Agent
 
 Share the log findings with SRE Agent:
 ```
@@ -153,7 +178,7 @@ The agent will help identify potential root causes and suggest investigation ste
 3. **Database firewall** - Check if Container App subnet is allowed
 4. **DNS resolution** - Private endpoint DNS configuration
 
-### Step 5: Diagnose with SRE Agent
+### Step 6: Diagnose with SRE Agent
 
 Ask the agent for specific diagnostic steps:
 ```
@@ -163,38 +188,43 @@ from my Container App in Azure?
 
 The agent will provide Azure-specific commands and checks.
 
-### Step 6: Fix the Issue
+### Step 7: Fix the Issue
 
-Follow SRE Agent's recommendations. Common fixes include:
+Follow SRE Agent's recommendations. The issue is the invalid database connection string we set earlier.
 
-**Check the connection string:**
+**Get the correct connection string:**
 ```bash
-# View the secret (connection string) in Container App
-az containerapp secret show \
-  --name ${BASE_NAME}-dev-api \
-  --resource-group $RESOURCE_GROUP
-```
+# Get the PostgreSQL connection details
+PSQL_SERVER=$(az postgres flexible-server list \
+  --resource-group $RESOURCE_GROUP \
+  --query "[0].name" -o tsv)
 
-**Verify VNet integration:**
-```bash
-# Check Container App network configuration
-az containerapp show \
+PSQL_HOST=$(az postgres flexible-server show \
+  --resource-group $RESOURCE_GROUP \
+  --name $PSQL_SERVER \
+  --query "fullyQualifiedDomainName" -o tsv)
+
+# Construct the correct connection string (use the password from your deployment)
+CORRECT_DB_URL="postgresql://sqladmin:YourSecurePassword123@${PSQL_HOST}:5432/workshopdb?sslmode=require"
+
+# Update the secret with the correct connection string
+az containerapp secret set \
   --name ${BASE_NAME}-dev-api \
   --resource-group $RESOURCE_GROUP \
-  --query "properties.configuration.ingress"
-```
+  --secrets "db-connection-string=${CORRECT_DB_URL}"
 
-**Check PostgreSQL firewall rules:**
-```bash
-# List firewall rules
-az postgres flexible-server firewall-rule list \
+# Force creation of a new revision to apply the secret change
+az containerapp update \
+  --name ${BASE_NAME}-dev-api \
   --resource-group $RESOURCE_GROUP \
-  --name ${BASE_NAME}-dev-psql-*
+  --set-env-vars "FORCE_UPDATE=$(date +%s)"
 ```
 
-### Step 7: Verify the Fix
+Wait about 30 seconds for the new revision to deploy.
 
-After applying fixes, test again:
+### Step 8: Verify the Fix
+
+After applying the fix, test again:
 ```bash
 curl -X POST \
   -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
@@ -222,15 +252,31 @@ The API is responding, but users report slow response times (5-10 seconds). Norm
 
 Identify the performance bottleneck and optimize.
 
-### Step 1: Measure Current Performance
+### Step 1: Simulate the Performance Issue
+
+Enable slow mode to simulate slow database queries:
 
 ```bash
-# Time a simple GET request
-time curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
-  "$APIM_URL/api/items" > /dev/null
+az containerapp update \
+  --name ${BASE_NAME}-dev-api \
+  --resource-group $RESOURCE_GROUP \
+  --set-env-vars "SLOW_MODE_DELAY=3.0"
 ```
 
-### Step 2: Ask SRE Agent for Investigation Strategy
+Wait about 30 seconds for the new revision to deploy with slow mode enabled.
+
+### Step 2: Measure Current Performance
+
+```bash
+# Time a simple GET request - look at the "time_total" value
+curl -w "\nTime: %{time_total}s\n" -o /dev/null -s \
+  -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
+  "$APIM_URL/api/items"
+```
+
+Run this a few times to see the response time. You should notice slower responses due to resource constraints.
+
+### Step 3: Ask SRE Agent for Investigation Strategy
 
 In the Azure SRE Agent chat, ask:
 ```
@@ -241,16 +287,19 @@ How should I investigate where the bottleneck is?
 
 The agent will suggest a diagnostic approach.
 
-### Step 3: Check Application Insights
+### Step 4: Check Application Insights
 
 ```bash
-APP_INSIGHTS_NAME=$(az monitor app-insights component list \
-  --resource-group $RESOURCE_GROUP \
-  --query "[0].name" -o tsv)
+APP_INSIGHTS_ID=$(az resource show \
+  --ids $(az resource list \
+    --resource-group $RESOURCE_GROUP \
+    --resource-type "microsoft.insights/components" \
+    --query "[0].id" -o tsv) \
+  --query "properties.AppId" -o tsv)
 
 # Query slow requests
 az monitor app-insights query \
-  --app $APP_INSIGHTS_NAME \
+  --app $APP_INSIGHTS_ID \
   --analytics-query "
     requests 
     | where timestamp > ago(1h)
@@ -260,7 +309,26 @@ az monitor app-insights query \
   --output table
 ```
 
-### Step 4: Investigate Database Performance
+### Step 5: Check Container App Environment Variables
+
+Ask Azure SRE Agent:
+```
+My Container App API is slow. Could environment variables be affecting performance?
+```
+
+Check the current environment variables:
+
+```bash
+az containerapp show \
+  --name ${BASE_NAME}-dev-api \
+  --resource-group $RESOURCE_GROUP \
+  --query "properties.template.containers[0].env[?name=='SLOW_MODE_DELAY']"
+```
+
+You should see `SLOW_MODE_DELAY` set to `3.0`, which is causing the artificial delay.
+```
+
+### Step 6: Investigate Database Performance
 
 Ask Azure SRE Agent:
 ```
@@ -283,21 +351,54 @@ az monitor metrics list \
   --output table
 ```
 
-### Step 5: Common Performance Issues
+### Step 7: Common Performance Issues
 
 Ask Azure SRE Agent:
 ```
-What are common causes of slow PostgreSQL queries in Azure Flexible Server?
+What are common causes of slow API responses in Azure Container Apps?
 ```
 
 Potential issues the agent may identify:
-1. **Missing indexes** - Database queries scanning full tables
-2. **Under-provisioned compute** - Not enough vCores/memory
-3. **Connection pooling** - Too many connection overhead
-4. **Network latency** - Cross-region calls
+1. **Misconfigured environment variables** - Debug/slow mode settings left enabled
+2. **Missing indexes** - Database queries scanning full tables
+3. **Under-provisioned compute** - Not enough vCores/memory
+4. **Connection pooling** - Too many connection overhead
+5. **Network latency** - Cross-region calls
 5. **Cold start** - Container Apps scaling from zero
 
-### Step 6: Optimize Based on Findings
+### Step 8: Fix the Issue
+
+Based on the investigation, disable slow mode to restore normal performance:
+
+```bash
+az containerapp update \
+  --name ${BASE_NAME}-dev-api \
+  --resource-group $RESOURCE_GROUP \
+  --set-env-vars "SLOW_MODE_DELAY=0"
+```
+
+Wait about 30 seconds for the new revision to deploy.
+
+### Step 9: Verify the Fix
+
+Test the response time again:
+
+```bash
+# Time a simple GET request - look at the "time_total" value
+curl -w "\nTime: %{time_total}s\n" -o /dev/null -s \
+  -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
+  "$APIM_URL/api/items"
+```
+
+Response time should be back to normal (under 200ms).
+
+Ask Azure SRE Agent to confirm best practices:
+```
+What are the recommended CPU and memory settings for a Python FastAPI 
+application in Azure Container Apps?
+```
+
+### Step 10: Optimize Based on Findings
 
 If database is slow, ask Azure SRE Agent:
 ```
@@ -327,8 +428,9 @@ az containerapp update \
 ```bash
 # Run multiple requests and measure
 for i in {1..10}; do
-  time curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
-    "$APIM_URL/api/items" > /dev/null
+  curl -w "Request $i - Time: %{time_total}s\n" -o /dev/null -s \
+    -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
+    "$APIM_URL/api/items"
 done
 ```
 
@@ -354,13 +456,20 @@ Diagnose why the container won't start and fix it.
 ### Step 1: Reproduce the Issue
 
 ```bash
-# Deploy a broken version (simulate misconfiguration)
+# Get the current API image
+ACR_NAME=$(az acr list --resource-group $RESOURCE_GROUP --query "[0].name" -o tsv)
+API_IMAGE="${ACR_NAME}.azurecr.io/workshop-api:v1.0.1"
+
+# Break the app by removing the required DATABASE_URL environment variable
+# The API will fail health checks and crash on startup
 az containerapp update \
   --name ${BASE_NAME}-dev-api \
   --resource-group $RESOURCE_GROUP \
-  --image mcr.microsoft.com/azuredocs/containerapps-helloworld:latest \
-  --set-env-vars "BROKEN_VAR=value"
+  --image $API_IMAGE \
+  --remove-env-vars "DATABASE_URL"
 ```
+
+Wait about 60 seconds for the new revision to deploy. The container will start but fail health checks because it can't connect to the database.
 
 ### Step 2: Check App Status
 
@@ -411,9 +520,37 @@ Potential causes the agent may identify:
 4. **Missing secrets** - Required environment variables not set
 5. **Application crash** - Code error on startup
 
-### Step 6: Diagnose ACR Access Issues
+### Step 6: Fix the Missing Environment Variable
 
-If you see image pull errors, ask Azure SRE Agent:
+The issue is the missing DATABASE_URL environment variable. Restore it by referencing the secret:
+
+```bash
+# Restore the DATABASE_URL environment variable that references the secret
+az containerapp update \
+  --name ${BASE_NAME}-dev-api \
+  --resource-group $RESOURCE_GROUP \
+  --set-env-vars "DATABASE_URL=secretref:db-connection-string"
+```
+
+Wait about 30 seconds for the new revision to deploy successfully.
+
+### Step 7: Verify the Fix
+
+```bash
+# Check revision status
+az containerapp revision list \
+  --name ${BASE_NAME}-dev-api \
+  --resource-group $RESOURCE_GROUP \
+  --query "reverse(sort_by([].{Name: name, Status: properties.provisioningState, Active: properties.active, Traffic: properties.trafficWeight}, &Name)) | [0:2]" \
+  --output table
+
+# Test the API
+curl -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" "$APIM_URL/health"
+```
+
+### Advanced: Diagnose ACR Access Issues
+
+If you see image pull errors with your own ACR images, ask Azure SRE Agent:
 ```
 My Container App can't pull from ACR with error 'unauthorized'. 
 I'm using managed identity. What could be wrong?
@@ -431,7 +568,7 @@ az role assignment list \
   --all
 ```
 
-### Step 7: Fix and Redeploy
+### Advanced: Fix ACR Access Issues
 
 If managed identity is missing ACR pull permission:
 ```bash
@@ -441,15 +578,12 @@ az role assignment create \
   --scope $(az acr show --name $ACR_NAME --query id -o tsv)
 ```
 
-Then restart:
+Then force creation of a new revision to apply the role assignment:
 ```bash
-az containerapp revision restart \
+az containerapp update \
   --name ${BASE_NAME}-dev-api \
   --resource-group $RESOURCE_GROUP \
-  --revision $(az containerapp revision list \
-    --name ${BASE_NAME}-dev-api \
-    --resource-group $RESOURCE_GROUP \
-    --query "[0].name" -o tsv)
+  --set-env-vars "FORCE_UPDATE=$(date +%s)"
 ```
 
 ### Key Learnings
@@ -695,9 +829,16 @@ az containerapp secret set \
 ### Step 2: Check Application Insights
 
 ```bash
+APP_INSIGHTS_ID=$(az resource show \
+  --ids $(az resource list \
+    --resource-group $RESOURCE_GROUP \
+    --resource-type "microsoft.insights/components" \
+    --query "[0].id" -o tsv) \
+  --query "properties.AppId" -o tsv)
+
 # No recent requests should appear
 az monitor app-insights query \
-  --app $APP_INSIGHTS_NAME \
+  --app $APP_INSIGHTS_ID \
   --analytics-query "requests | where timestamp > ago(5m)" \
   --output table
 ```
@@ -740,6 +881,11 @@ How do I update a Container App secret and ensure the app picks up the new value
 
 Get the correct connection string and follow the agent's guidance:
 ```bash
+APP_INSIGHTS_NAME=$(az resource list \
+  --resource-group $RESOURCE_GROUP \
+  --resource-type "microsoft.insights/components" \
+  --query "[0].name" -o tsv)
+
 CORRECT_CONNECTION_STRING=$(az monitor app-insights component show \
   --app $APP_INSIGHTS_NAME \
   --resource-group $RESOURCE_GROUP \

@@ -140,10 +140,19 @@ az deployment group create \
 
 ## Step 7: Monitor Deployment Progress
 
-While deployment is running, you can monitor progress:
+While deployment is running, you can monitor progress.
+
+First, get your deployment name (it was generated with a timestamp in Step 6):
 
 ```bash
-DEPLOYMENT_NAME="workshop-deployment-20251106-123456"  # Use your actual deployment name
+# List recent deployments to find your deployment name
+az deployment group list \
+  --resource-group $RESOURCE_GROUP \
+  --query "[?starts_with(name, 'workshop-deployment-')].{Name: name, State: properties.provisioningState, Timestamp: properties.timestamp}" \
+  -o table
+
+# Save your deployment name to a variable (use the most recent one from the list above)
+DEPLOYMENT_NAME="workshop-deployment-20251106-123456"  # Replace with your actual deployment name
 
 # Check overall status
 az deployment group show \
@@ -218,6 +227,9 @@ SUBSCRIPTION_KEY=$(az rest \
 echo "Subscription Key: $SUBSCRIPTION_KEY"
 
 # Save for later use
+echo "export BASE_NAME=$BASE_NAME" >> ~/.workshop-env
+echo "export RESOURCE_GROUP=$RESOURCE_GROUP" >> ~/.workshop-env
+echo "export DEPLOYMENT_NAME=$DEPLOYMENT_NAME" >> ~/.workshop-env
 echo "export APIM_URL=$APIM_URL" >> ~/.workshop-env
 echo "export SUBSCRIPTION_KEY=$SUBSCRIPTION_KEY" >> ~/.workshop-env
 ```
@@ -361,13 +373,16 @@ curl -X DELETE \
 ### Check Application Insights Integration
 
 ```bash
-APP_INSIGHTS_NAME=$(az monitor app-insights component list \
-  --resource-group $RESOURCE_GROUP \
-  --query "[0].name" -o tsv)
+APP_INSIGHTS_ID=$(az resource show \
+  --ids $(az resource list \
+    --resource-group $RESOURCE_GROUP \
+    --resource-type "microsoft.insights/components" \
+    --query "[0].id" -o tsv) \
+  --query "properties.AppId" -o tsv)
 
 # Query recent requests
 az monitor app-insights query \
-  --app $APP_INSIGHTS_NAME \
+  --app $APP_INSIGHTS_ID \
   --analytics-query "requests | where timestamp > ago(10m) | order by timestamp desc | take 10" \
   --output table
 ```

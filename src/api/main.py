@@ -5,6 +5,7 @@ Demonstrates: PostgreSQL connectivity, REST endpoints, Application Insights inte
 
 import os
 import logging
+import time
 from typing import Optional, List
 from datetime import datetime
 from contextlib import asynccontextmanager
@@ -20,6 +21,7 @@ from opencensus.ext.azure.log_exporter import AzureLogHandler
 PORT = int(os.getenv("PORT", "8000"))
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 APPLICATIONINSIGHTS_CONNECTION_STRING = os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING", "")
+SLOW_MODE_DELAY = float(os.getenv("SLOW_MODE_DELAY", "0"))  # Seconds to delay each request (0 = disabled)
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -45,11 +47,18 @@ def get_db_connection():
         logger.error(f"Database connection error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database connection failed: {str(e)}")
 
+def apply_slow_mode():
+    """Apply artificial delay if SLOW_MODE_DELAY is set"""
+    if SLOW_MODE_DELAY > 0:
+        logger.warning(f"SLOW_MODE enabled: Delaying request by {SLOW_MODE_DELAY}s")
+        time.sleep(SLOW_MODE_DELAY)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifecycle management for the FastAPI app"""
     # Startup
     logger.info("Starting Workshop API...")
+    logger.info(f"SLOW_MODE_DELAY configured: {SLOW_MODE_DELAY}s")
     logger.info(f"Port: {PORT}")
     logger.info(f"Database configured: {bool(DATABASE_URL)}")
     logger.info(f"Application Insights configured: {bool(APPLICATIONINSIGHTS_CONNECTION_STRING)}")
@@ -158,6 +167,7 @@ async def root():
 @app.get("/items", response_model=List[ItemResponse], tags=["Items"])
 async def list_items(skip: int = 0, limit: int = 100):
     """List all items with pagination"""
+    apply_slow_mode()  # Apply artificial delay if SLOW_MODE is enabled
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -180,6 +190,7 @@ async def list_items(skip: int = 0, limit: int = 100):
 @app.get("/items/{item_id}", response_model=ItemResponse, tags=["Items"])
 async def get_item(item_id: int):
     """Get a specific item by ID"""
+    apply_slow_mode()  # Apply artificial delay if SLOW_MODE is enabled
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
