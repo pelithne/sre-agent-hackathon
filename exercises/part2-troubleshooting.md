@@ -93,7 +93,31 @@ Users are reporting that the API returns 500 Internal Server Error when trying t
 
 Investigate and fix the issue using SRE Agent.
 
-### Step 1: Reproduce the Issue
+### Step 1: Simulate the Issue
+
+First, let's break the database connection to simulate the problem:
+
+```bash
+# Get the PostgreSQL server name
+PSQL_SERVER=$(az postgres flexible-server list \
+  --resource-group $RESOURCE_GROUP \
+  --query "[0].name" -o tsv)
+
+# Break the connection by updating the connection string with an invalid hostname
+az containerapp secret set \
+  --name ${BASE_NAME}-dev-api \
+  --resource-group $RESOURCE_GROUP \
+  --secrets "database-url=postgresql://invalid-host:5432/workshopdb"
+
+# Restart the container app to apply the change
+az containerapp revision restart \
+  --name ${BASE_NAME}-dev-api \
+  --resource-group $RESOURCE_GROUP
+```
+
+Wait about 30 seconds for the restart to complete, then proceed.
+
+### Step 2: Reproduce the Issue
 
 First, verify your environment variables are set:
 
@@ -115,7 +139,7 @@ curl -X POST \
   "$APIM_URL/api/items"
 ```
 
-### Step 2: Gather Initial Information
+### Step 3: Gather Initial Information
 
 In your Azure SRE Agent chat interface, ask:
 ```
@@ -125,7 +149,7 @@ The health endpoint returns 200 OK. How should I investigate this?
 
 The agent will suggest checking logs and provide guidance on diagnostic steps.
 
-### Step 3: Check Container App Logs
+### Step 4: Check Container App Logs
 
 Based on SRE Agent's guidance, check the logs:
 
@@ -136,7 +160,7 @@ az containerapp logs show \
   --tail 50
 ```
 
-### Step 4: Analyze the Error with SRE Agent
+### Step 5: Analyze the Error with SRE Agent
 
 Share the log findings with SRE Agent:
 ```
@@ -153,7 +177,7 @@ The agent will help identify potential root causes and suggest investigation ste
 3. **Database firewall** - Check if Container App subnet is allowed
 4. **DNS resolution** - Private endpoint DNS configuration
 
-### Step 5: Diagnose with SRE Agent
+### Step 6: Diagnose with SRE Agent
 
 Ask the agent for specific diagnostic steps:
 ```
@@ -163,38 +187,42 @@ from my Container App in Azure?
 
 The agent will provide Azure-specific commands and checks.
 
-### Step 6: Fix the Issue
+### Step 7: Fix the Issue
 
-Follow SRE Agent's recommendations. Common fixes include:
+Follow SRE Agent's recommendations. The issue is the invalid database connection string we set earlier.
 
-**Check the connection string:**
+**Get the correct connection string:**
 ```bash
-# View the secret (connection string) in Container App
-az containerapp secret show \
+# Get the PostgreSQL connection details
+PSQL_SERVER=$(az postgres flexible-server list \
+  --resource-group $RESOURCE_GROUP \
+  --query "[0].name" -o tsv)
+
+PSQL_HOST=$(az postgres flexible-server show \
+  --resource-group $RESOURCE_GROUP \
+  --name $PSQL_SERVER \
+  --query "fullyQualifiedDomainName" -o tsv)
+
+# Construct the correct connection string (use the password from your deployment)
+CORRECT_DB_URL="postgresql://workshopuser:YourSecurePassword123@${PSQL_HOST}:5432/workshopdb"
+
+# Update the secret with the correct connection string
+az containerapp secret set \
+  --name ${BASE_NAME}-dev-api \
+  --resource-group $RESOURCE_GROUP \
+  --secrets "database-url=${CORRECT_DB_URL}"
+
+# Restart the container app
+az containerapp revision restart \
   --name ${BASE_NAME}-dev-api \
   --resource-group $RESOURCE_GROUP
 ```
 
-**Verify VNet integration:**
-```bash
-# Check Container App network configuration
-az containerapp show \
-  --name ${BASE_NAME}-dev-api \
-  --resource-group $RESOURCE_GROUP \
-  --query "properties.configuration.ingress"
-```
+Wait about 30 seconds for the restart to complete.
 
-**Check PostgreSQL firewall rules:**
-```bash
-# List firewall rules
-az postgres flexible-server firewall-rule list \
-  --resource-group $RESOURCE_GROUP \
-  --name ${BASE_NAME}-dev-psql-*
-```
+### Step 8: Verify the Fix
 
-### Step 7: Verify the Fix
-
-After applying fixes, test again:
+After applying the fix, test again:
 ```bash
 curl -X POST \
   -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
