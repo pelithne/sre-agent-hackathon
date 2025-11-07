@@ -13,7 +13,24 @@ You'll work through several realistic failure scenarios that SREs encounter in p
 - Completed [Part 1: Setup](./part1-setup.md)
 - Working infrastructure with API deployed
 - Azure account with appropriate permissions
-- Your environment variables set from Part 1
+- Environment variables from Part 1 (see below)
+
+### Load Environment Variables
+
+If you're in a new terminal session, reload the environment variables from Part 1:
+
+```bash
+# Load saved environment variables
+source ~/.workshop-env
+
+# Or set them manually if needed:
+export BASE_NAME="sre<your-initials>"
+export RESOURCE_GROUP="${BASE_NAME}-workshop"
+export APIM_URL="<your-apim-gateway-url>"
+export SUBSCRIPTION_KEY="<your-subscription-key>"
+```
+
+> **Tip**: To retrieve your APIM URL and subscription key if you've lost them, see the commands in Part 1, Step 9.
 
 ## Learning Objectives
 
@@ -78,8 +95,19 @@ Investigate and fix the issue using SRE Agent.
 
 ### Step 1: Reproduce the Issue
 
+First, verify your environment variables are set:
+
 ```bash
-# This should fail with 500 error
+# Verify variables are set
+echo "APIM URL: $APIM_URL"
+echo "Subscription Key: $SUBSCRIPTION_KEY"
+```
+
+If either is empty, reload them from Part 1 (see Prerequisites section above).
+
+Now test the API - this should fail with 500 error:
+
+```bash
 curl -X POST \
   -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
   -H "Content-Type: application/json" \
