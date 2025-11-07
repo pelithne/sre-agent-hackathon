@@ -244,14 +244,16 @@ The agent will suggest a diagnostic approach.
 ### Step 3: Check Application Insights
 
 ```bash
-APP_INSIGHTS_NAME=$(az resource list \
-  --resource-group $RESOURCE_GROUP \
-  --resource-type "microsoft.insights/components" \
-  --query "[0].name" -o tsv)
+APP_INSIGHTS_ID=$(az resource show \
+  --ids $(az resource list \
+    --resource-group $RESOURCE_GROUP \
+    --resource-type "microsoft.insights/components" \
+    --query "[0].id" -o tsv) \
+  --query "properties.AppId" -o tsv)
 
 # Query slow requests
 az monitor app-insights query \
-  --app $APP_INSIGHTS_NAME \
+  --app $APP_INSIGHTS_ID \
   --analytics-query "
     requests 
     | where timestamp > ago(1h)
@@ -696,9 +698,16 @@ az containerapp secret set \
 ### Step 2: Check Application Insights
 
 ```bash
+APP_INSIGHTS_ID=$(az resource show \
+  --ids $(az resource list \
+    --resource-group $RESOURCE_GROUP \
+    --resource-type "microsoft.insights/components" \
+    --query "[0].id" -o tsv) \
+  --query "properties.AppId" -o tsv)
+
 # No recent requests should appear
 az monitor app-insights query \
-  --app $APP_INSIGHTS_NAME \
+  --app $APP_INSIGHTS_ID \
   --analytics-query "requests | where timestamp > ago(5m)" \
   --output table
 ```
@@ -741,6 +750,11 @@ How do I update a Container App secret and ensure the app picks up the new value
 
 Get the correct connection string and follow the agent's guidance:
 ```bash
+APP_INSIGHTS_NAME=$(az resource list \
+  --resource-group $RESOURCE_GROUP \
+  --resource-type "microsoft.insights/components" \
+  --query "[0].name" -o tsv)
+
 CORRECT_CONNECTION_STRING=$(az monitor app-insights component show \
   --app $APP_INSIGHTS_NAME \
   --resource-group $RESOURCE_GROUP \

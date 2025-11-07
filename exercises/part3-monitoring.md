@@ -180,13 +180,10 @@ when there are more than 10 failed requests (5xx errors) in 5 minutes?
 Get Application Insights resource ID:
 
 ```bash
-APP_INSIGHTS_ID=$(az monitor app-insights component show \
-  --app $(az resource list \
-    --resource-group $RESOURCE_GROUP \
-    --resource-type "microsoft.insights/components" \
-    --query "[0].name" -o tsv) \
+APP_INSIGHTS_ID=$(az resource list \
   --resource-group $RESOURCE_GROUP \
-  --query id -o tsv)
+  --resource-type "microsoft.insights/components" \
+  --query "[0].id" -o tsv)
 ```
 
 Create the alert:

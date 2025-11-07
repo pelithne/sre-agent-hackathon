@@ -373,14 +373,16 @@ curl -X DELETE \
 ### Check Application Insights Integration
 
 ```bash
-APP_INSIGHTS_NAME=$(az resource list \
-  --resource-group $RESOURCE_GROUP \
-  --resource-type "microsoft.insights/components" \
-  --query "[0].name" -o tsv)
+APP_INSIGHTS_ID=$(az resource show \
+  --ids $(az resource list \
+    --resource-group $RESOURCE_GROUP \
+    --resource-type "microsoft.insights/components" \
+    --query "[0].id" -o tsv) \
+  --query "properties.AppId" -o tsv)
 
 # Query recent requests
 az monitor app-insights query \
-  --app $APP_INSIGHTS_NAME \
+  --app $APP_INSIGHTS_ID \
   --analytics-query "requests | where timestamp > ago(10m) | order by timestamp desc | take 10" \
   --output table
 ```
