@@ -205,7 +205,7 @@ PSQL_HOST=$(az postgres flexible-server show \
   --query "fullyQualifiedDomainName" -o tsv)
 
 # Construct the correct connection string (use the password from your deployment)
-CORRECT_DB_URL="postgresql://workshopuser:YourSecurePassword123@${PSQL_HOST}:5432/workshopdb"
+CORRECT_DB_URL="postgresql://workshopuser:YourSecurePassword123@${PSQL_HOST}:5432/workshopdb?sslmode=require"
 
 # Update the secret with the correct connection string
 az containerapp secret set \
