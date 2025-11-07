@@ -456,13 +456,14 @@ Diagnose why the container won't start and fix it.
 ### Step 1: Reproduce the Issue
 
 ```bash
-# Deploy a broken version (simulate misconfiguration)
+# Deploy a broken version - use a non-existent image to simulate image pull failure
 az containerapp update \
   --name ${BASE_NAME}-dev-api \
   --resource-group $RESOURCE_GROUP \
-  --image mcr.microsoft.com/azuredocs/containerapps-helloworld:latest \
-  --set-env-vars "BROKEN_VAR=value"
+  --image mcr.microsoft.com/azuredocs/nonexistent-image:broken
 ```
+
+Wait about 60 seconds for the deployment to fail. The revision will fail to provision because the container image doesn't exist.
 
 ### Step 2: Check App Status
 
@@ -513,9 +514,41 @@ Potential causes the agent may identify:
 4. **Missing secrets** - Required environment variables not set
 5. **Application crash** - Code error on startup
 
-### Step 6: Diagnose ACR Access Issues
+### Step 6: Fix the Image
 
-If you see image pull errors, ask Azure SRE Agent:
+The issue is the non-existent image. Restore the working API image:
+
+```bash
+# Get the ACR name and working image
+ACR_NAME=$(az acr list --resource-group $RESOURCE_GROUP --query "[0].name" -o tsv)
+WORKING_IMAGE="${ACR_NAME}.azurecr.io/workshop-api:v1.0.1"
+
+# Restore the working image
+az containerapp update \
+  --name ${BASE_NAME}-dev-api \
+  --resource-group $RESOURCE_GROUP \
+  --image $WORKING_IMAGE
+```
+
+Wait about 30 seconds for the new revision to deploy successfully.
+
+### Step 7: Verify the Fix
+
+```bash
+# Check revision status
+az containerapp revision list \
+  --name ${BASE_NAME}-dev-api \
+  --resource-group $RESOURCE_GROUP \
+  --query "reverse(sort_by([].{Name: name, Status: properties.provisioningState, Active: properties.active, Traffic: properties.trafficWeight}, &Name)) | [0:2]" \
+  --output table
+
+# Test the API
+curl -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" "$APIM_URL/health"
+```
+
+### Advanced: Diagnose ACR Access Issues
+
+If you see image pull errors with your own ACR images, ask Azure SRE Agent:
 ```
 My Container App can't pull from ACR with error 'unauthorized'. 
 I'm using managed identity. What could be wrong?
@@ -533,7 +566,7 @@ az role assignment list \
   --all
 ```
 
-### Step 7: Fix and Redeploy
+### Advanced: Fix ACR Access Issues
 
 If managed identity is missing ACR pull permission:
 ```bash
