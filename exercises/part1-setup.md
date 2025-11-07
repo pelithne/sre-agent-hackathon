@@ -92,9 +92,10 @@ ACR_NAME="${BASE_NAME}acr$RANDOM"
 az acr create \
   --resource-group $RESOURCE_GROUP \
   --name $ACR_NAME \
-  --sku Basic \
-  --admin-enabled true
+  --sku Basic
 ```
+
+> **Note:** This ACR will use managed identity authentication. Admin credentials are not needed since the Container App will authenticate using its managed identity (configured in Step 7).
 
 ---
 
