@@ -134,34 +134,11 @@ az deployment group create \
 
 ⏱️ **Deployment time: ~10-12 minutes** (APIM is the slowest resource)
 
----
-
-## Step 7: Grant ACR Pull Permissions
-
-After deployment completes, grant the managed identity permission to pull from ACR:
-
-```bash
-# Get managed identity principal ID
-IDENTITY_PRINCIPAL_ID=$(az identity show \
-  --name ${BASE_NAME}-dev-identity \
-  --resource-group $RESOURCE_GROUP \
-  --query principalId -o tsv)
-
-# Grant AcrPull role
-az role assignment create \
-  --assignee $IDENTITY_PRINCIPAL_ID \
-  --role AcrPull \
-  --scope $(az acr show --name $ACR_NAME --query id -o tsv)
-
-# Restart the container app to pick up the permissions
-az containerapp restart \
-  --name ${BASE_NAME}-dev-api \
-  --resource-group $RESOURCE_GROUP
-```
+> **Note:** The deployment automatically grants the Container App's managed identity permission to pull images from ACR. No manual role assignment needed!
 
 ---
 
-## Step 8: Monitor Deployment Progress
+## Step 7: Monitor Deployment Progress
 
 While deployment is running, you can monitor progress:
 
@@ -192,7 +169,7 @@ az deployment operation group list \
 
 ---
 
-## Step 9: Verify Deployment
+## Step 8: Verify Deployment
 
 Once deployment completes, verify all resources were created successfully:
 
@@ -221,7 +198,7 @@ az apim api list \
 
 ---
 
-## Step 10: Get APIM Gateway URL and Subscription Key
+## Step 9: Get APIM Gateway URL and Subscription Key
 
 ```bash
 # Get APIM gateway URL
@@ -247,9 +224,9 @@ echo "export SUBSCRIPTION_KEY=$SUBSCRIPTION_KEY" >> ~/.workshop-env
 
 ---
 
-## Step 11: Test the API
+## Step 10: Test the API
 
-### 11.1: Test Health Endpoint
+### 10.1: Test Health Endpoint
 
 ```bash
 curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
@@ -264,7 +241,7 @@ curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
 }
 ```
 
-### 11.2: Test Root Endpoint
+### 10.2: Test Root Endpoint
 
 ```bash
 curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
@@ -284,7 +261,7 @@ curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
 }
 ```
 
-### 11.3: Test CRUD Operations
+### 10.3: Test CRUD Operations
 
 #### Create an Item
 ```bash

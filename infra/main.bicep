@@ -85,8 +85,21 @@ resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-
   tags: tags
 }
 
-// Note: Role assignment for ACR pull must be granted manually or via separate deployment
-// Command: az role assignment create --assignee <managed-identity-principal-id> --role AcrPull --scope /subscriptions/<sub-id>/resourceGroups/<acr-rg>/providers/Microsoft.ContainerRegistry/registries/<acr-name>
+// Reference to existing ACR (created in Step 4 of the workshop)
+resource existingAcr 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = if (!empty(acrName)) {
+  name: acrName
+}
+
+// Grant managed identity AcrPull permission to the ACR
+resource acrPullRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(acrName)) {
+  name: guid(managedIdentity.id, existingAcr.id, 'AcrPull')
+  scope: existingAcr
+  properties: {
+    principalId: managedIdentity.properties.principalId
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d') // AcrPull role
+    principalType: 'ServicePrincipal'
+  }
+}
 
 // Virtual Network
 resource vnet 'Microsoft.Network/virtualNetworks@2023-11-01' = {
@@ -260,6 +273,9 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
   name: containerAppName
   location: location
   tags: tags
+  dependsOn: [
+    acrPullRoleAssignment // Ensure ACR permissions are granted before pulling image
+  ]
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
