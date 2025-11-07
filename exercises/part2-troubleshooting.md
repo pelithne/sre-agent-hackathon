@@ -252,7 +252,21 @@ The API is responding, but users report slow response times (5-10 seconds). Norm
 
 Identify the performance bottleneck and optimize.
 
-### Step 1: Measure Current Performance
+### Step 1: Simulate the Performance Issue
+
+Reduce the Container App resources to create resource contention:
+
+```bash
+az containerapp update \
+  --name ${BASE_NAME}-dev-api \
+  --resource-group $RESOURCE_GROUP \
+  --cpu 0.25 \
+  --memory 0.5Gi
+```
+
+Wait about 30 seconds for the new revision to deploy.
+
+### Step 2: Measure Current Performance
 
 ```bash
 # Time a simple GET request
@@ -260,7 +274,9 @@ time curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
   "$APIM_URL/api/items" > /dev/null
 ```
 
-### Step 2: Ask SRE Agent for Investigation Strategy
+Run this a few times to see the response time. You should notice slower responses due to resource constraints.
+
+### Step 3: Ask SRE Agent for Investigation Strategy
 
 In the Azure SRE Agent chat, ask:
 ```
@@ -271,7 +287,7 @@ How should I investigate where the bottleneck is?
 
 The agent will suggest a diagnostic approach.
 
-### Step 3: Check Application Insights
+### Step 4: Check Application Insights
 
 ```bash
 APP_INSIGHTS_ID=$(az resource show \
@@ -293,7 +309,23 @@ az monitor app-insights query \
   --output table
 ```
 
-### Step 4: Investigate Database Performance
+### Step 5: Check Container App Resources
+
+Ask Azure SRE Agent:
+```
+My Container App API is slow. How can I check if it's under-resourced?
+```
+
+Check the current resource allocation:
+
+```bash
+az containerapp show \
+  --name ${BASE_NAME}-dev-api \
+  --resource-group $RESOURCE_GROUP \
+  --query "properties.template.containers[0].resources"
+```
+
+### Step 6: Investigate Database Performance
 
 Ask Azure SRE Agent:
 ```
@@ -316,7 +348,7 @@ az monitor metrics list \
   --output table
 ```
 
-### Step 5: Common Performance Issues
+### Step 7: Common Performance Issues
 
 Ask Azure SRE Agent:
 ```
@@ -330,7 +362,39 @@ Potential issues the agent may identify:
 4. **Network latency** - Cross-region calls
 5. **Cold start** - Container Apps scaling from zero
 
-### Step 6: Optimize Based on Findings
+### Step 8: Fix the Issue
+
+Based on the investigation, the issue is under-resourced Container App. Restore proper resource allocation:
+
+```bash
+az containerapp update \
+  --name ${BASE_NAME}-dev-api \
+  --resource-group $RESOURCE_GROUP \
+  --cpu 0.5 \
+  --memory 1Gi
+```
+
+Wait about 30 seconds for the new revision to deploy.
+
+### Step 9: Verify the Fix
+
+Test the response time again:
+
+```bash
+# Time a simple GET request
+time curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
+  "$APIM_URL/api/items" > /dev/null
+```
+
+Response time should be back to normal (under 200ms).
+
+Ask Azure SRE Agent to confirm best practices:
+```
+What are the recommended CPU and memory settings for a Python FastAPI 
+application in Azure Container Apps?
+```
+
+### Step 10: Optimize Based on Findings
 
 If database is slow, ask Azure SRE Agent:
 ```
