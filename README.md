@@ -6,23 +6,6 @@ Welcome to the Azure SRE Agent Hackathon! This hands-on workshop will teach you 
 
 In this workshop, you'll build a complete cloud-native application on Azure and learn how to use Azure SRE Agent to diagnose issues, investigate incidents, and perform root cause analysis. You'll gain practical experience with modern Site Reliability Engineering practices in Azure.
 
-### What You'll Build
-
-A production-like architecture consisting of:
-- **Azure API Management** (Consumption tier) - API gateway and management layer
-- **Azure Container Apps** - Hosting a RESTful API application
-- **Azure Database for PostgreSQL** - Data persistence layer
-- **Azure Monitor** - Observability and alerting
-- **Application Insights** - Application performance monitoring
-
-### What You'll Learn
-
-1. **Infrastructure as Code** - Deploy Azure resources using Bicep templates
-2. **Application Deployment** - Containerize and deploy APIs to Azure Container Apps
-3. **SRE Agent Troubleshooting** - Use AI-powered diagnostics to identify and resolve issues
-4. **Incident Management** - Set up alerts, investigate incidents, and create RCA reports
-5. **Advanced SRE Practices** - Auto-remediation, performance optimization, and chaos engineering
-
 ## Prerequisites
 
 Before starting the workshop, ensure you have:
