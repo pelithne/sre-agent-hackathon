@@ -181,8 +181,9 @@ Get Application Insights resource ID:
 
 ```bash
 APP_INSIGHTS_ID=$(az monitor app-insights component show \
-  --app $(az monitor app-insights component list \
+  --app $(az resource list \
     --resource-group $RESOURCE_GROUP \
+    --resource-type "microsoft.insights/components" \
     --query "[0].name" -o tsv) \
   --resource-group $RESOURCE_GROUP \
   --query id -o tsv)

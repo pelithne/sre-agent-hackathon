@@ -244,8 +244,9 @@ The agent will suggest a diagnostic approach.
 ### Step 3: Check Application Insights
 
 ```bash
-APP_INSIGHTS_NAME=$(az monitor app-insights component list \
+APP_INSIGHTS_NAME=$(az resource list \
   --resource-group $RESOURCE_GROUP \
+  --resource-type "microsoft.insights/components" \
   --query "[0].name" -o tsv)
 
 # Query slow requests
