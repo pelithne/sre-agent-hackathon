@@ -25,7 +25,18 @@ value: format('postgresql://{0}:{1}@{2}:5432/{3}?sslmode=require', postgresAdmin
 value: 'postgresql://${postgresAdminUsername}:${postgresAdminPassword}@${postgresServer.properties.fullyQualifiedDomainName}:5432/workshopdb?sslmode=require'
 ```
 
-#### Issue 2: Port Configuration Mismatch  
+#### Issue 2: Environment Variable Duplication & Invalid Secret Reference
+**Problem**: During troubleshooting, added extra PostgreSQL environment variables that:
+- Referenced non-existent `postgres-password` secret  
+- Duplicated variables already passed from `apps.bicep`
+- Caused deployment error: "SecretRef 'postgres-password' defined for container 'api-container' not found"
+
+**Solution**: 
+- Use `containerAppConfig.environmentVariables` passed from `apps.bicep` 
+- Remove hardcoded environment variables from `containerApps.bicep` module
+- Eliminate environment variable duplication
+
+### Issue 3: Port Configuration Mismatch  
 **Original working version**:
 - Target Port: 8000
 - PORT env var: '8000'
@@ -41,7 +52,13 @@ value: 'postgresql://${postgresAdminUsername}:${postgresAdminPassword}@${postgre
 - Added Bicep lint pragma to suppress false positive security warning
 - Matches exact working configuration from `main.bicep.backup`
 
-### 2. Connection String Format
+### 2. Fixed Environment Variable Configuration ✅
+- Removed duplicate environment variables from `containerApps.bicep`
+- Use `containerAppConfig.environmentVariables` passed from `apps.bicep`  
+- Eliminated invalid `postgres-password` secret reference
+- Resolved "SecretRef not found" deployment error
+
+### 3. Connection String Format
 ```bicep
 secrets: [
   {
@@ -59,7 +76,8 @@ secrets: [
 4. 📝 **Document in PR** for review before merging to master
 
 ## Files Modified
-- `infra/modules/containerApps.bicep` - Fixed connection string format
+- `infra/modules/containerApps.bicep` - Fixed connection string format and environment variables
+- `DATABASE_CONNECTION_FIX.md` - Investigation documentation
 
 ## Lessons Learned
 - String interpolation in Bicep is preferred over `format()` for secure values
