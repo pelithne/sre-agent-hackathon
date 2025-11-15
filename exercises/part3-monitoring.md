@@ -828,8 +828,8 @@ az monitor app-insights query \
     | extend 
         AvailabilitySLO = 99.9,
         LatencySLO = 500,
-        AvailabilityStatus = iff(AvailabilityPercent >= 99.9, '✓ Meeting SLO', '✗ Breaching SLO'),
-        LatencyStatus = iff(P95Latency <= 500, '✓ Meeting SLO', '✗ Breaching SLO')
+        AvailabilityStatus = iff(AvailabilityPercent >= 99.9, 'Meeting SLO', 'Breaching SLO'),
+        LatencyStatus = iff(P95Latency <= 500, 'Meeting SLO', 'Breaching SLO')
   " \
   --output table
 ```
@@ -1022,32 +1022,32 @@ az monitor app-insights query \
 ## Best Practices Summary
 
 ### Alert Design
-✅ Alert on symptoms, not causes  
-✅ Use actionable alert descriptions  
-✅ Include runbook links in alerts  
-✅ Set appropriate severity levels  
-✅ Test alerts regularly  
+- Alert on symptoms, not causes  
+- Use actionable alert descriptions  
+- Include runbook links in alerts  
+- Set appropriate severity levels  
+- Test alerts regularly  
 
 ### Monitoring Strategy
-✅ Monitor the four golden signals: latency, traffic, errors, saturation  
-✅ Use both metrics and logs  
-✅ Implement synthetic monitoring  
-✅ Track SLOs, not just SLAs  
-✅ Review dashboards in team meetings  
+- Monitor the four golden signals: latency, traffic, errors, saturation  
+- Use both metrics and logs  
+- Implement synthetic monitoring  
+- Track SLOs, not just SLAs  
+- Review dashboards in team meetings  
 
 ### Incident Response
-✅ Document all incidents with RCAs  
-✅ Use SRE Agent to accelerate investigation  
-✅ Follow a consistent incident process  
-✅ Share learnings across teams  
-✅ Track MTTR and MTTD metrics  
+- Document all incidents with RCAs  
+- Use SRE Agent to accelerate investigation  
+- Follow a consistent incident process  
+- Share learnings across teams  
+- Track MTTR and MTTD metrics  
 
 ### Using SRE Agent Effectively
-✅ Provide context in questions  
-✅ Ask for KQL queries and CLI commands  
-✅ Request runbooks and checklists  
-✅ Use it to draft RCA reports  
-✅ Validate recommendations before applying  
+- Provide context in questions  
+- Ask for KQL queries and CLI commands  
+- Request runbooks and checklists  
+- Use it to draft RCA reports  
+- Validate recommendations before applying  
 
 ---
 

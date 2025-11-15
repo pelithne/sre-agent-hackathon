@@ -115,7 +115,7 @@ set_var "RESOURCE_GROUP" "${BASE_NAME}-workshop"
 
 ## Step 5: Two-Phase Deployment Approach
 
-> ⚠️ **Important**: You MUST complete Phase 1 before attempting Phase 2 or 3. The phases have dependencies and cannot be skipped.
+> **Important**: You MUST complete Phase 1 before attempting Phase 2 or 3. The phases have dependencies and cannot be skipped.
 
 ### Phase 1: Infrastructure Deployment (Without Container Apps)
 
@@ -130,7 +130,7 @@ az deployment group create \
   --parameters postgresAdminPassword='YourSecurePassword123'
 ```
 
-⏱️ **Deployment time: ~8-12 minutes** 
+**Deployment time: ~8-12 minutes** 
 
 > **What this deploys:**
 > - Azure Container Registry (ACR) with managed identity integration
@@ -140,7 +140,7 @@ az deployment group create \
 > - API Management service (infrastructure only)
 > - Managed Identity with ACR access permissions
 
-**🔍 Verify Phase 1 Success:**
+**Verify Phase 1 Success:**
 ```bash
 # Check that ACR was created
 az acr list --resource-group $RESOURCE_GROUP --query "[0].name" -o tsv
@@ -198,9 +198,9 @@ az deployment group create \
   --parameters postgresAdminPassword='YourSecurePassword123'
 ```
 
-⏱️ **Deployment time: ~8-12 minutes** (Container Apps + APIM Consumption tier)
+**Deployment time: ~8-12 minutes** (Container Apps + APIM Consumption tier)
 
-**📊 Monitor Long-Running Deployment:**
+**Monitor Long-Running Deployment:**
 
 If the deployment is taking longer than expected, use these commands to monitor progress:
 
@@ -237,7 +237,7 @@ az containerapp env list \
 ```
 
 **Expected timeline for Phase 3:**
-- Container Apps Environment: ~8-10 minutes ⏰ (usually the longest step)
+- Container Apps Environment: ~8-10 minutes (usually the longest step)
 - Container App: ~2-3 minutes  
 - APIM API Configuration: ~1-2 minutes
 
@@ -278,7 +278,7 @@ az deployment operation group list \
 **Expected deployment time:**
 - Virtual Network: ~1 minute
 - Log Analytics & App Insights: ~1 minute
-- API Management (Consumption): ~10-11 minutes ⏰
+- API Management (Consumption): ~10-11 minutes
 - Container Apps Environment: ~8-10 minutes
 - PostgreSQL Flexible Server: ~5-8 minutes
 - Container App: ~2-3 minutes

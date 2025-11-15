@@ -1233,26 +1233,26 @@ Design and implement your own advanced SRE scenario based on your team's needs.
 
 ### Advanced SRE Principles
 
-✅ **Automation First** - Automate toil and repetitive tasks  
-✅ **Chaos Engineering** - Test failure modes proactively  
-✅ **Security-First** - Investigate anomalies quickly  
-✅ **Cost Awareness** - Optimize continuously  
-✅ **Business Alignment** - Track metrics that matter  
-✅ **Documentation** - Share knowledge through runbooks and RCAs  
-✅ **Continuous Learning** - Every incident is learning opportunity  
+- **Automation First** - Automate toil and repetitive tasks  
+- **Chaos Engineering** - Test failure modes proactively  
+- **Security-First** - Investigate anomalies quickly  
+- **Cost Awareness** - Optimize continuously  
+- **Business Alignment** - Track metrics that matter  
+- **Documentation** - Share knowledge through runbooks and RCAs  
+- **Continuous Learning** - Every incident is learning opportunity  
 
 ### Using SRE Agent for Advanced Scenarios
 
-✅ Ask for design reviews and architecture recommendations  
-✅ Request cost-benefit analysis for optimizations  
-✅ Get help writing complex KQL queries  
-✅ Draft incident reports and postmortems  
-✅ Validate security configurations  
-✅ Generate runbooks and playbooks  
+- Ask for design reviews and architecture recommendations  
+- Request cost-benefit analysis for optimizations  
+- Get help writing complex KQL queries  
+- Draft incident reports and postmortems  
+- Validate security configurations  
+- Generate runbooks and playbooks  
 
 ---
 
-## Congratulations! 🎉
+## Congratulations!
 
 You've completed the advanced SRE exercises! You now have hands-on experience with:
 

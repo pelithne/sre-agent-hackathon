@@ -1042,14 +1042,14 @@ Follow SRE Agent's guidance through:
 
 ### 1. Provide Context
 
-✅ **Good:**
+- **Good:**
 ```
 "My Azure Container App API returns 500 errors when accessing PostgreSQL. 
 The error message is 'connection refused'. Both resources are in the same VNet.
 Container App: srepk-dev-api in rg sre-workshop-pk"
 ```
 
-❌ **Bad:**
+- **Bad:**
 ```
 "My API doesn't work"
 ```
