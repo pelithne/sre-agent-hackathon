@@ -28,34 +28,15 @@ The SRE Agent needs a realistic application to troubleshoot! We provide a comple
 
 *The application is intentionally complex enough to generate realistic incidents for SRE Agent practice.*
 
-## Quick Start
+## Getting Started
 
-### Prerequisites
-- Azure Subscription with contributor access
-- **Azure SRE Agent access** (primary workshop tool)
-- Azure CLI (version 2.50.0 or later)
-- Git and Visual Studio Code
+Ready to master the Azure SRE Agent? Follow the workshop exercises in order:
 
-### 1. Deploy Your Troubleshooting Environment
+1. **[Part 1: Setup](exercises/part1-setup.md)** - Deploy your troubleshooting environment
+2. **[Part 2: Troubleshooting](exercises/part2-troubleshooting.md)** - Learn SRE Agent basics
+3. **[Part 3: Monitoring](exercises/part3-monitoring.md)** - Advanced SRE practices
 
-```bash
-# Deploy the application stack for SRE Agent practice
-cd infra
-./deploy-phase1.sh
-
-# Build and deploy the application components
-cd ..
-./build.sh
-cd infra
-./deploy-phase2.sh
-```
-
-### 2. Start Your SRE Journey
-Once deployed, you'll use the **Azure SRE Agent** to:
-- Investigate pre-configured scenarios and intentional issues
-- Practice incident response workflows
-- Learn automated diagnostics and remediation
-- Master alert management and escalation
+Each exercise builds on the previous one and includes hands-on scenarios for practicing real-world SRE skills.
 
 ## Repository Structure
 
