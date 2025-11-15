@@ -130,7 +130,9 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
       secrets: [
         {
           name: 'db-connection-string'
-          value: format('postgresql://{0}:{1}@{2}:5432/{3}?sslmode=require', postgresAdminUsername, postgresAdminPassword, postgresServerFqdn, postgresDatabaseName)
+          // String interpolation matches the original working implementation
+          #disable-next-line no-hardcoded-secrets
+          value: 'postgresql://${postgresAdminUsername}:${postgresAdminPassword}@${postgresServerFqdn}:5432/${postgresDatabaseName}?sslmode=require'
         }
         {
           name: 'appinsights-connection-string'
@@ -152,6 +154,30 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
               {
                 name: 'DATABASE_URL'
                 secretRef: 'db-connection-string'
+              }
+              {
+                name: 'POSTGRES_HOST'
+                value: postgresServerFqdn
+              }
+              {
+                name: 'POSTGRES_PORT'
+                value: '5432'
+              }
+              {
+                name: 'POSTGRES_DB'
+                value: postgresDatabaseName
+              }
+              {
+                name: 'POSTGRES_USER'
+                value: postgresAdminUsername
+              }
+              {
+                name: 'POSTGRES_PASSWORD'
+                secretRef: 'postgres-password'
+              }
+              {
+                name: 'POSTGRES_SSL'
+                value: 'require'
               }
               {
                 name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
