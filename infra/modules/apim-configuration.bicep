@@ -103,7 +103,192 @@ resource healthOperation 'Microsoft.ApiManagement/service/apis/operations@2023-0
   }
 }
 
-// Items CRUD Operations would go here (simplified for now)
+// Get root endpoint
+resource rootOperation 'Microsoft.ApiManagement/service/apis/operations@2023-09-01-preview' = {
+  parent: apimApi
+  name: 'get-root'
+  properties: {
+    displayName: 'Get Root'
+    method: 'GET'
+    urlTemplate: '/'
+    description: 'Get API information and available endpoints'
+    responses: [
+      {
+        statusCode: 200
+        description: 'API information'
+        representations: [
+          {
+            contentType: 'application/json'
+          }
+        ]
+      }
+    ]
+  }
+}
+
+// List all items
+resource listItemsOperation 'Microsoft.ApiManagement/service/apis/operations@2023-09-01-preview' = {
+  parent: apimApi
+  name: 'list-items'
+  properties: {
+    displayName: 'List Items'
+    method: 'GET'
+    urlTemplate: '/items'
+    description: 'Get all items from the database'
+    responses: [
+      {
+        statusCode: 200
+        description: 'List of items'
+        representations: [
+          {
+            contentType: 'application/json'
+          }
+        ]
+      }
+    ]
+  }
+}
+
+// Create new item
+resource createItemOperation 'Microsoft.ApiManagement/service/apis/operations@2023-09-01-preview' = {
+  parent: apimApi
+  name: 'create-item'
+  properties: {
+    displayName: 'Create Item'
+    method: 'POST'
+    urlTemplate: '/items'
+    description: 'Create a new item in the database'
+    request: {
+      representations: [
+        {
+          contentType: 'application/json'
+        }
+      ]
+    }
+    responses: [
+      {
+        statusCode: 201
+        description: 'Item created successfully'
+        representations: [
+          {
+            contentType: 'application/json'
+          }
+        ]
+      }
+      {
+        statusCode: 400
+        description: 'Invalid request'
+      }
+    ]
+  }
+}
+
+// Get item by ID
+resource getItemOperation 'Microsoft.ApiManagement/service/apis/operations@2023-09-01-preview' = {
+  parent: apimApi
+  name: 'get-item'
+  properties: {
+    displayName: 'Get Item'
+    method: 'GET'
+    urlTemplate: '/items/{id}'
+    description: 'Get a specific item by ID'
+    templateParameters: [
+      {
+        name: 'id'
+        type: 'integer'
+        required: true
+        description: 'Item ID'
+      }
+    ]
+    responses: [
+      {
+        statusCode: 200
+        description: 'Item details'
+        representations: [
+          {
+            contentType: 'application/json'
+          }
+        ]
+      }
+      {
+        statusCode: 404
+        description: 'Item not found'
+      }
+    ]
+  }
+}
+
+// Update item by ID
+resource updateItemOperation 'Microsoft.ApiManagement/service/apis/operations@2023-09-01-preview' = {
+  parent: apimApi
+  name: 'update-item'
+  properties: {
+    displayName: 'Update Item'
+    method: 'PUT'
+    urlTemplate: '/items/{id}'
+    description: 'Update an existing item'
+    templateParameters: [
+      {
+        name: 'id'
+        type: 'integer'
+        required: true
+        description: 'Item ID'
+      }
+    ]
+    request: {
+      representations: [
+        {
+          contentType: 'application/json'
+        }
+      ]
+    }
+    responses: [
+      {
+        statusCode: 200
+        description: 'Item updated successfully'
+        representations: [
+          {
+            contentType: 'application/json'
+          }
+        ]
+      }
+      {
+        statusCode: 404
+        description: 'Item not found'
+      }
+    ]
+  }
+}
+
+// Delete item by ID
+resource deleteItemOperation 'Microsoft.ApiManagement/service/apis/operations@2023-09-01-preview' = {
+  parent: apimApi
+  name: 'delete-item'
+  properties: {
+    displayName: 'Delete Item'
+    method: 'DELETE'
+    urlTemplate: '/items/{id}'
+    description: 'Delete an item by ID'
+    templateParameters: [
+      {
+        name: 'id'
+        type: 'integer'
+        required: true
+        description: 'Item ID'
+      }
+    ]
+    responses: [
+      {
+        statusCode: 204
+        description: 'Item deleted successfully'
+      }
+      {
+        statusCode: 404
+        description: 'Item not found'
+      }
+    ]
+  }
+}
 
 // ============================================================================
 // Outputs

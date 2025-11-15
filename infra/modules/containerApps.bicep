@@ -130,7 +130,9 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
       secrets: [
         {
           name: 'db-connection-string'
-          value: format('postgresql://{0}:{1}@{2}:5432/{3}?sslmode=require', postgresAdminUsername, postgresAdminPassword, postgresServerFqdn, postgresDatabaseName)
+          // String interpolation matches the original working implementation
+          #disable-next-line no-hardcoded-secrets
+          value: 'postgresql://${postgresAdminUsername}:${postgresAdminPassword}@${postgresServerFqdn}:5432/${postgresDatabaseName}?sslmode=require'
         }
         {
           name: 'appinsights-connection-string'
@@ -148,25 +150,14 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
             memory: containerAppConfig.memory
           }
           env: concat(
-            [
-              {
-                name: 'DATABASE_URL'
-                secretRef: 'db-connection-string'
-              }
-              {
-                name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-                secretRef: 'appinsights-connection-string'
-              }
-            ],
+            containerAppConfig.environmentVariables,
             // Add PORT environment variable only for custom API (not for placeholder)
             isPlaceholderImage ? [] : [
               {
                 name: 'PORT'
                 value: string(containerAppConfig.targetPort)
               }
-            ],
-            // Add any additional environment variables
-            containerAppConfig.environmentVariables
+            ]
           )
         }
       ]
