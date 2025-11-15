@@ -12,7 +12,7 @@ This repository contains the infrastructure-as-code (IaC) templates and deployme
 - [Troubleshooting](#troubleshooting)
 - [Clean Up](#clean-up)
 
-## 🎯 Overview
+## Overview
 
 The infrastructure is designed to support a production-ready SRE monitoring and alerting system with the following components:
 
@@ -23,7 +23,7 @@ The infrastructure is designed to support a production-ready SRE monitoring and 
 - **Virtual Network**: Secure network isolation with private endpoints
 - **Managed Identity**: Secure authentication without secrets
 
-## 🏗️ Architecture
+## Architecture
 
 ```mermaid
 graph TB
@@ -91,7 +91,7 @@ graph TB
    - Application should expose health checks on `/health`
    - Environment variables for database connection should be configurable
 
-## 🚀 Two-Phase Deployment
+## Two-Phase Deployment
 
 The deployment is split into two phases to solve the "chicken-and-egg" problem where Container Apps need an image that doesn't exist until ACR is deployed.
 
@@ -134,7 +134,7 @@ cd ../../infra/
 - ✅ API Container App
 - ✅ Application configuration & secrets
 
-## 🔧 Manual Deployment
+## Manual Deployment
 
 If you prefer to run the deployment manually:
 
@@ -247,7 +247,7 @@ Key metrics to monitor:
 - API response times and error rates
 - Container restart counts
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -319,7 +319,7 @@ az deployment group delete \
   --name infrastructure
 ```
 
-## 📚 Additional Resources
+## Additional Resources
 
 - [Azure Container Apps Documentation](https://docs.microsoft.com/en-us/azure/container-apps/)
 - [Azure Bicep Documentation](https://docs.microsoft.com/en-us/azure/azure-resource-manager/bicep/)
