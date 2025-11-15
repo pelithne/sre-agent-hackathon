@@ -150,49 +150,14 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
             memory: containerAppConfig.memory
           }
           env: concat(
-            [
-              {
-                name: 'DATABASE_URL'
-                secretRef: 'db-connection-string'
-              }
-              {
-                name: 'POSTGRES_HOST'
-                value: postgresServerFqdn
-              }
-              {
-                name: 'POSTGRES_PORT'
-                value: '5432'
-              }
-              {
-                name: 'POSTGRES_DB'
-                value: postgresDatabaseName
-              }
-              {
-                name: 'POSTGRES_USER'
-                value: postgresAdminUsername
-              }
-              {
-                name: 'POSTGRES_PASSWORD'
-                secretRef: 'postgres-password'
-              }
-              {
-                name: 'POSTGRES_SSL'
-                value: 'require'
-              }
-              {
-                name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-                secretRef: 'appinsights-connection-string'
-              }
-            ],
+            containerAppConfig.environmentVariables,
             // Add PORT environment variable only for custom API (not for placeholder)
             isPlaceholderImage ? [] : [
               {
                 name: 'PORT'
                 value: string(containerAppConfig.targetPort)
               }
-            ],
-            // Add any additional environment variables
-            containerAppConfig.environmentVariables
+            ]
           )
         }
       ]
