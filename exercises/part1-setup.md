@@ -361,7 +361,31 @@ curl -X DELETE -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" "$API_URL/items
 3. **Logs (KQL Queries)**:
    - In the left menu under **Monitoring**, click **Logs**
    - Close the "Queries" dialog if it appears
-   - Try querying recent requests or traces
+   - **Important:** Ensure the query language is set to **KQL** (not SQL). Look for a dropdown at the top of the query editor and select "KQL" if needed
+   - Try these example queries:
+     ```kql
+     // View recent API requests
+     requests
+     | where timestamp > ago(1h)
+     | project timestamp, name, url, resultCode, duration
+     | order by timestamp desc
+     | take 10
+     
+     // View application traces/logs
+     traces
+     | where timestamp > ago(1h)
+     | project timestamp, message, severityLevel
+     | order by timestamp desc
+     | take 20
+     
+     // View dependencies (database calls, external APIs)
+     dependencies
+     | where timestamp > ago(1h)
+     | project timestamp, name, type, target, duration, success
+     | order by timestamp desc
+     | take 10
+     ```
+   - Click the **Run** button to execute each query
 
 ### PostgreSQL Database
 1. In your resource group, find and click on the PostgreSQL Flexible Server (name: `${BASE_NAME}-db`)
