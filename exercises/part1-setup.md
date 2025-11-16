@@ -80,7 +80,7 @@ If you see "No workshop environment file found", that's normal for first-time se
 Choose a unique base name (3-15 characters, lowercase) that will be used for all resources:
 
 ```bash
-# Set and persist variables using the workshop helper - customize with your initials
+# Set and persist variables using the workshop helper. 
 set_var "BASE_NAME" "sre<your-initials>"  # Must be 3-15 characters, lowercase
 set_var "LOCATION" "swedencentral"        # Or your preferred region
 set_var "RESOURCE_GROUP" "${BASE_NAME}-workshop"
@@ -91,12 +91,6 @@ az group create \
   --location $LOCATION
 ```
 
-**Example:**
-```bash
-set_var "BASE_NAME" "srepkpl"
-set_var "LOCATION" "swedencentral"
-set_var "RESOURCE_GROUP" "${BASE_NAME}-workshop"
-```
 
 > **Alternative: Traditional Environment Variables**
 > 
@@ -109,17 +103,17 @@ set_var "RESOURCE_GROUP" "${BASE_NAME}-workshop"
 > 
 > **Note:** With traditional variables, you'll need to manually re-set them if your shell session times out.
 
-> **Note:** The `BASE_NAME` will be used to generate names for all Azure resources (ACR, Container App, APIM, etc.) to ensure they are unique and consistently named. The `set_var` function automatically persists variables to `~/.workshop-env` so they survive shell timeouts.
+> **Note:** The `BASE_NAME` will be used to generate names for all Azure resources (ACR, Container App, APIM, etc.) to ensure they are unique and consistently named. The `set_var` function automatically persists variables to `~/.workshop-env` so they survive shell timeouts och changing from one shell to another.
 
 ---
 
-## Step 5: Two-Phase Deployment Approach
+## Step 5: Two-Phase Deployment 
 
 > **Important**: You MUST complete Phase 1 before attempting Phase 2. The phases have dependencies and cannot be skipped.
 
 ### Phase 1: Infrastructure Deployment
 
-First, deploy the core infrastructure:
+First, deploy the core infrastructure. This deployment is using infrastructure as code with a bicep template located in ````infra/infrastructure.bicep````
 
 ```bash
 az deployment group create \
@@ -137,7 +131,7 @@ az deployment group create \
 > - Virtual Network with proper segmentation
 > - Log Analytics and Application Insights for monitoring
 > - PostgreSQL Flexible Server with private networking
-> - API Management service (infrastructure only)
+> - API Management service
 > - Managed Identity with ACR access permissions
 
 
@@ -146,10 +140,10 @@ az deployment group create \
 Once infrastructure deployment completes, build your container image:
 
 ```bash
-# Get ACR name directly from the resource group (much simpler!)
+# Get ACR name directly from the resource group
 ACR_NAME=$(az acr list --resource-group $RESOURCE_GROUP --query "[0].name" -o tsv)
 
-# Save ACR name for later use. Make sure the echo outputs the name of the registry
+# Save ACR name for later use. Make sure that the echo command outputs the name of the registry
 set_var "ACR_NAME" "$ACR_NAME"
 echo "ACR Name: $ACR_NAME"
 
@@ -163,7 +157,7 @@ az acr build \
 
 
 
-Now deploy the Container Apps with the built image:
+Now deploy the Container Apps with the built image. This deployment is using the bicep template ````apps.bicep````
 
 ```bash
 # Get ACR login server
@@ -205,46 +199,52 @@ az resource list \
   --resource-group $RESOURCE_GROUP \
   --output table
 
-# Verify APIM API and operations were created
-APIM_NAME=$(az apim list --resource-group $RESOURCE_GROUP --query "[0].name" -o tsv)
-
-az apim api list \
-  --resource-group $RESOURCE_GROUP \
-  --service-name $APIM_NAME \
-  --output table
 ```
 
-**Expected output:** You should see 1 API named "workshop-api"
-
----
-
-## Step 8: Get API URL and Test API
+## Step 8: Get APIM Gateway URL and Subscription Key
 
 ```bash
-# Get Container App URL from apps deployment
-API_URL=$(az deployment group show \
-  --resource-group $RESOURCE_GROUP \
-  --name $(az deployment group list --resource-group $RESOURCE_GROUP --query "[?starts_with(name, 'apps-deployment-')].name | [-1]" -o tsv) \
-  --query "properties.outputs.apiContainerAppUrl.value" -o tsv)
+# Get APIM name
+APIM_NAME=$(az apim list --resource-group $RESOURCE_GROUP --query "[0].name" -o tsv)
 
+# Get APIM gateway URL
+APIM_GATEWAY_URL=$(az apim show \
+  --name $APIM_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --query "gatewayUrl" -o tsv)
+
+# Construct the API URL (APIM gateway + API path)
+API_URL="${APIM_GATEWAY_URL}/api"
+
+echo "APIM Gateway URL: $APIM_GATEWAY_URL"
 echo "API URL: $API_URL"
+set_var "APIM_GATEWAY_URL" "$APIM_GATEWAY_URL"
 set_var "API_URL" "$API_URL"
+
+# Get subscription key for APIM
+SUBSCRIPTION_KEY=$(az rest \
+  --method post \
+  --url "https://management.azure.com/subscriptions/$(az account show --query id -o tsv)/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.ApiManagement/service/$APIM_NAME/subscriptions/master/listSecrets?api-version=2021-08-01" \
+  --query "primaryKey" -o tsv)
+
+echo "Subscription Key: $SUBSCRIPTION_KEY"
+set_var "SUBSCRIPTION_KEY" "$SUBSCRIPTION_KEY"
 
 # Verify all required variables are set and persisted
 echo ""
 verify_vars
 ```
 
-> **Note:** We're now connecting directly to the Container App, not through APIM. This simplifies the setup and eliminates the need for subscription keys.
+> **Note:** We're testing through APIM which provides API gateway features like rate limiting, authentication, and monitoring. All requests require the `Ocp-Apim-Subscription-Key` header.
 
 ---
 
-## Step 9: Test the API
+## Step 9: Test the API Through APIM
 
 ### 9.1: Test Health Endpoint
 
 ```bash
-curl -s "$API_URL/health" | jq .
+curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" "$API_URL/health" | jq .
 ```
 
 **Expected output:**
@@ -258,7 +258,7 @@ curl -s "$API_URL/health" | jq .
 ### 9.2: Test Root Endpoint
 
 ```bash
-curl -s "$API_URL/" | jq .
+curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" "$API_URL/" | jq .
 ```
 
 **Expected output:**
@@ -280,6 +280,7 @@ curl -s "$API_URL/" | jq .
 ```bash
 curl -X POST \
   -H "Content-Type: application/json" \
+  -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
   -d '{
     "name": "Test Item",
     "description": "My first item",
@@ -304,18 +305,19 @@ curl -X POST \
 
 #### List All Items
 ```bash
-curl -s "$API_URL/items" | jq .
+curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" "$API_URL/items" | jq .
 ```
 
 #### Get Specific Item
 ```bash
-curl -s "$API_URL/items/1" | jq .
+curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" "$API_URL/items/1" | jq .
 ```
 
 #### Update an Item
 ```bash
 curl -X PUT \
   -H "Content-Type: application/json" \
+  -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
   -d '{
     "name": "Updated Item",
     "description": "Updated description",
@@ -327,7 +329,7 @@ curl -X PUT \
 
 #### Delete an Item
 ```bash
-curl -X DELETE "$API_URL/items/1"
+curl -X DELETE -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" "$API_URL/items/1"
 ```
 
 ---
@@ -340,9 +342,9 @@ curl -X DELETE "$API_URL/items/1"
 
 ### Container App
 - Open the Container App instance
+- Check **Revisions** to see deployment history
 - Check **Metrics** for request counts and response times
 - View **Log stream** for real-time logs
-- Check **Revisions** to see deployment history
 
 ### Application Insights
 - Open Application Insights instance
