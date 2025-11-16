@@ -341,21 +341,43 @@ curl -X DELETE -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" "$API_URL/items
 3. Explore the deployed resources:
 
 ### Container App
-- Open the Container App instance
-- Check **Revisions** to see deployment history
-- Check **Metrics** for request counts and response times
-- View **Log stream** for real-time logs
+1. In your resource group, find and click on the Container App resource (name: `${BASE_NAME}-dev-api`)
+2. **View Metrics**:
+   - In the left menu, scroll down to **Monitoring** section
+   - Click on **Metrics**
+   - Click **+ Add metric**
+   - Select metrics like "Requests", "CPU Usage", "Memory Working Set Bytes"
+   - Observe request counts and response times
+3. **View Log Stream**:
+   - In the left menu under **Monitoring**, click **Log stream**
+   - Wait a few seconds for logs to appear
+   - You should see real-time application logs from your FastAPI service
+   - Make an API request (using curl) and watch the logs appear in real-time
+4. **Check Revisions**:
+   - In the left menu under **Application**, click **Revisions and replicas**
+   - You'll see your current revision and deployment history
+   - Each deployment creates a new revision for rollback capability
 
 ### Application Insights
-- Open Application Insights instance
-- Navigate to **Application Map** to see service dependencies
-- Check **Live Metrics** for real-time monitoring
-- Explore **Logs** for query-based analysis
+1. In your resource group, find and click on the Application Insights resource (name: `${BASE_NAME}-insights`)
+2. **Live Metrics**:
+   - In the left menu under **Investigate**, click **Live Metrics**
+   - Make some API requests using curl
+   - Watch real-time telemetry: incoming requests, outgoing requests, overall health
+3. **Logs (KQL Queries)**:
+   - In the left menu under **Monitoring**, click **Logs**
+   - Close the "Queries" dialog if it appears
+   - Try querying recent requests or traces
 
 ### PostgreSQL Database
-- Open PostgreSQL Flexible Server
-- Check **Networking** settings (private endpoint)
-- View **Monitoring** metrics
+1. In your resource group, find and click on the PostgreSQL Flexible Server (name: `${BASE_NAME}-db`)
+2. **Networking Settings**:
+   - In the left menu under **Settings**, click **Networking**
+   - Verify that public access is disabled (more secure)
+   - Check the virtual network integration for private connectivity
+3. **Monitoring Metrics**:
+   - In the left menu under **Monitoring**, click **Metrics**
+   - View database performance metrics like CPU, memory, connections, and storage
 
 ---
 
@@ -364,19 +386,31 @@ curl -X DELETE -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" "$API_URL/items
 ### Check Application Insights Integration
 
 ```bash
-APP_INSIGHTS_ID=$(az resource show \
-  --ids $(az resource list \
-    --resource-group $RESOURCE_GROUP \
-    --resource-type "microsoft.insights/components" \
-    --query "[0].id" -o tsv) \
-  --query "properties.AppId" -o tsv)
+# Get Application Insights name
+APP_INSIGHTS_NAME=$(az resource list \
+  --resource-group $RESOURCE_GROUP \
+  --resource-type "microsoft.insights/components" \
+  --query "[0].name" -o tsv)
 
-# Query recent requests
+# Get Application Insights App ID
+APP_INSIGHTS_ID=$(az monitor app-insights component show \
+  --app $APP_INSIGHTS_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --query "appId" -o tsv)
+
+echo "Application Insights App ID: $APP_INSIGHTS_ID"
+
+# Query recent requests (allow more time for telemetry ingestion)
 az monitor app-insights query \
   --app $APP_INSIGHTS_ID \
-  --analytics-query "requests | where timestamp > ago(10m) | order by timestamp desc | take 10" \
+  --analytics-query "requests | where timestamp > ago(1h) | order by timestamp desc | take 10" \
   --output table
 ```
+
+> **Note**: If the query returns empty results:
+> 1. Make sure you've made some API requests in Step 9
+> 2. Wait 2-3 minutes for telemetry to be ingested
+> 3. Telemetry ingestion can have delays; try the query in the Azure Portal (Application Insights → Logs) instead
 
 ### Check Container App Logs
 
