@@ -75,8 +75,9 @@ clear_vars() {
 
 # Function to verify required variables are set
 verify_vars() {
-    local required_vars=("BASE_NAME" "RESOURCE_GROUP" "APIM_URL" "SUBSCRIPTION_KEY")
+    local required_vars=("BASE_NAME" "RESOURCE_GROUP" "APIM_GATEWAY_URL" "SUBSCRIPTION_KEY")
     local missing_vars=()
+    local invalid_vars=()
     
     echo "Verifying required workshop variables..."
     
@@ -86,15 +87,30 @@ verify_vars() {
             missing_vars+=("$var")
         else
             echo "✓ $var is set"
+            
+            # Validate APIM_GATEWAY_URL contains current BASE_NAME
+            if [ "$var" = "APIM_GATEWAY_URL" ] && [ -n "$BASE_NAME" ]; then
+                if [[ ! "$var_value" =~ $BASE_NAME ]]; then
+                    invalid_vars+=("$var (contains wrong BASE_NAME - expected: $BASE_NAME)")
+                fi
+            fi
         fi
     done
     
-    if [ ${#missing_vars[@]} -gt 0 ]; then
+    if [ ${#missing_vars[@]} -gt 0 ] || [ ${#invalid_vars[@]} -gt 0 ]; then
         echo ""
-        echo "❌ Missing required variables:"
-        for var in "${missing_vars[@]}"; do
-            echo "  - $var"
-        done
+        if [ ${#missing_vars[@]} -gt 0 ]; then
+            echo "❌ Missing required variables:"
+            for var in "${missing_vars[@]}"; do
+                echo "  - $var"
+            done
+        fi
+        if [ ${#invalid_vars[@]} -gt 0 ]; then
+            echo "❌ Invalid variables:"
+            for var in "${invalid_vars[@]}"; do
+                echo "  - $var"
+            done
+        fi
         echo ""
         echo "Please run the setup steps or source the workshop environment:"
         echo "  source ~/.workshop-env"

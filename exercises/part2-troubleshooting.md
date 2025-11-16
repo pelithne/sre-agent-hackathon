@@ -35,18 +35,16 @@ If variables are missing, you can manually set them:
 # Set variables manually if needed
 set_var "BASE_NAME" "sre<your-initials>"
 set_var "RESOURCE_GROUP" "${BASE_NAME}-workshop"
-set_var "APIM_URL" "<your-apim-gateway-url>"
+set_var "APIM_GATEWAY_URL" "<your-apim-gateway-url>"
 set_var "SUBSCRIPTION_KEY" "<your-subscription-key>"
 
 # Verify all required variables are set
 verify_vars
 ```
 
-> **Tip**: To retrieve your APIM URL and subscription key if you've lost them, see the commands in Part 1, Step 9.
-
 ## Learning Objectives
 
-By the end of this exercise, you will:
+By the end of this exercise, you will have completed the following tasks:
 - Create and configure an Azure SRE Agent
 - Use natural language queries to investigate resource health
 - Diagnose API connectivity problems with AI assistance
@@ -114,6 +112,7 @@ First, let's break the database connection to simulate the problem:
 PSQL_SERVER=$(az postgres flexible-server list \
   --resource-group $RESOURCE_GROUP \
   --query "[0].name" -o tsv)
+set_var "PSQL_SERVER" "$PSQL_SERVER"
 
 # Break the connection by updating the connection string with an invalid hostname
 az containerapp secret set \
@@ -136,7 +135,7 @@ First, verify your environment variables are set:
 
 ```bash
 # Verify variables are set
-echo "APIM URL: $APIM_URL"
+echo "APIM URL: $APIM_GATEWAY_URL"
 echo "Subscription Key: $SUBSCRIPTION_KEY"
 ```
 
@@ -149,7 +148,7 @@ curl -X POST \
   -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
   -H "Content-Type: application/json" \
   -d '{"name": "Test", "description": "Test item"}' \
-  "$APIM_URL/api/items"
+  "$APIM_GATEWAY_URL/api/items"
 ```
 
 ### Step 3: Gather Initial Information
@@ -215,6 +214,7 @@ PSQL_HOST=$(az postgres flexible-server show \
   --resource-group $RESOURCE_GROUP \
   --name $PSQL_SERVER \
   --query "fullyQualifiedDomainName" -o tsv)
+set_var "PSQL_HOST" "$PSQL_HOST"
 
 # Construct the correct connection string (use the password from your deployment)
 set_var "CORRECT_DB_URL" "postgresql://sqladmin:YourSecurePassword123@${PSQL_HOST}:5432/workshopdb?sslmode=require"
@@ -247,7 +247,7 @@ curl -X POST \
   -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
   -H "Content-Type: application/json" \
   -d '{"name": "Fixed", "description": "After troubleshooting"}' \
-  "$APIM_URL/api/items" | jq .
+  "$APIM_GATEWAY_URL/api/items" | jq .
 ```
 
 ### Key Learnings
@@ -288,7 +288,7 @@ Wait about 30 seconds for the new revision to deploy with slow mode enabled.
 # Time a simple GET request - look at the "time_total" value
 curl -w "\nTime: %{time_total}s\n" -o /dev/null -s \
   -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
-  "$APIM_URL/api/items"
+  "$APIM_GATEWAY_URL/api/items"
 ```
 
 Run this a few times to see the response time. You should notice slower responses due to resource constraints.
@@ -313,6 +313,7 @@ APP_INSIGHTS_ID=$(az resource show \
     --resource-type "microsoft.insights/components" \
     --query "[0].id" -o tsv) \
   --query "properties.AppId" -o tsv)
+set_var "APP_INSIGHTS_ID" "$APP_INSIGHTS_ID"
 
 # Query slow requests
 az monitor app-insights query \
@@ -404,7 +405,7 @@ Test the response time again:
 # Time a simple GET request - look at the "time_total" value
 curl -w "\nTime: %{time_total}s\n" -o /dev/null -s \
   -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
-  "$APIM_URL/api/items"
+  "$APIM_GATEWAY_URL/api/items"
 ```
 
 Response time should be back to normal (under 200ms).
@@ -447,7 +448,7 @@ az containerapp update \
 for i in {1..10}; do
   curl -w "Request $i - Time: %{time_total}s\n" -o /dev/null -s \
     -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
-    "$APIM_URL/api/items"
+    "$APIM_GATEWAY_URL/api/items"
 done
 ```
 
@@ -475,6 +476,7 @@ Diagnose why the container won't start and fix it.
 ```bash
 # Get the current API image and store it
 ACR_NAME=$(az acr list --resource-group $RESOURCE_GROUP --query "[0].name" -o tsv)
+set_var "ACR_NAME" "$ACR_NAME"
 set_var "API_IMAGE" "${ACR_NAME}.azurecr.io/workshop-api:v1.0.1"
 
 # Break the app by removing the required DATABASE_URL environment variable
@@ -568,7 +570,7 @@ az containerapp revision list \
   --output table
 
 # Test the API
-curl -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" "$APIM_URL/health"
+curl -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" "$APIM_GATEWAY_URL/health"
 ```
 
 ### Advanced: Diagnose ACR Access Issues
@@ -585,6 +587,7 @@ IDENTITY_PRINCIPAL_ID=$(az identity show \
   --name ${BASE_NAME}-dev-identity \
   --resource-group $RESOURCE_GROUP \
   --query principalId -o tsv)
+set_var "IDENTITY_PRINCIPAL_ID" "$IDENTITY_PRINCIPAL_ID"
 
 az role assignment list \
   --assignee $IDENTITY_PRINCIPAL_ID \
@@ -634,7 +637,7 @@ Identify and fix the APIM timeout configuration.
 # Simulate a slow endpoint (if you have one)
 # Or observe timeout behavior
 curl -v -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
-  "$APIM_URL/api/items"
+  "$APIM_GATEWAY_URL/api/items"
 ```
 
 ### Step 2: Ask Azure SRE Agent
@@ -653,6 +656,7 @@ The agent will guide you through checking APIM configuration.
 APIM_NAME=$(az apim list \
   --resource-group $RESOURCE_GROUP \
   --query "[0].name" -o tsv)
+set_var "APIM_NAME" "$APIM_NAME"
 
 # Check API settings
 az apim api show \
@@ -731,14 +735,14 @@ Diagnose and fix the connection pooling issue.
 # Simple load test (requires apache bench)
 ab -n 100 -c 10 \
   -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
-  "$APIM_URL/api/items"
+  "$APIM_GATEWAY_URL/api/items"
 ```
 
 Or use curl in a loop:
 ```bash
 for i in {1..50}; do
   curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
-    "$APIM_URL/api/items" &
+    "$APIM_GATEWAY_URL/api/items" &
 done
 wait
 ```
@@ -858,6 +862,7 @@ APP_INSIGHTS_ID=$(az resource show \
     --resource-type "microsoft.insights/components" \
     --query "[0].id" -o tsv) \
   --query "properties.AppId" -o tsv)
+set_var "APP_INSIGHTS_ID" "$APP_INSIGHTS_ID"
 
 # No recent requests should appear
 az monitor app-insights query \
@@ -908,11 +913,13 @@ APP_INSIGHTS_NAME=$(az resource list \
   --resource-group $RESOURCE_GROUP \
   --resource-type "microsoft.insights/components" \
   --query "[0].name" -o tsv)
+set_var "APP_INSIGHTS_NAME" "$APP_INSIGHTS_NAME"
 
 CORRECT_CONNECTION_STRING=$(az monitor app-insights component show \
   --app $APP_INSIGHTS_NAME \
   --resource-group $RESOURCE_GROUP \
   --query connectionString -o tsv)
+set_var "CORRECT_CONNECTION_STRING" "$CORRECT_CONNECTION_STRING"
 
 # Update the secret
 az containerapp secret set \
