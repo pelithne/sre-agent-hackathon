@@ -157,9 +157,9 @@ Now open your Azure SRE Agent chat interface and start the investigation. The ke
 
 **Initial Query:**
 ```
-I'm getting 500 errors from my Container App API (${BASE_NAME}-dev-api) when making POST requests. 
+I'm getting 500 errors from my Container App API when making POST requests. 
 The health endpoint returns 200 OK, but all CRUD operations fail with 500 Internal Server Error.
-The resource group is ${BASE_NAME}-workshop.
+My Container App is named srepeter8-dev-api in resource group srepeter8-workshop.
 How should I investigate this?
 ```
 
@@ -179,16 +179,17 @@ This is a PostgreSQL connection error. How can I fix the database connection str
 
 If the agent suggests checking DNS resolution, ask:
 ```
-How can I verify the correct PostgreSQL hostname for my flexible server 
-named ${PSQL_SERVER}?
+How can I verify the correct PostgreSQL hostname for my flexible server?
 ```
 
 **Key Tips for Working with SRE Agent:**
-- Provide specific resource names when possible
+- Provide specific resource names (use your actual BASE_NAME, e.g., "srepeter8-dev-api")
 - Share exact error messages from logs
 - Mention what you've already checked
 - Ask for step-by-step commands when needed
 - Request verification steps after applying fixes
+
+> **Important:** Replace placeholder names like "srepeter8" with your actual BASE_NAME in all queries to the SRE Agent.
 
 ### Step 4: Fix the Issue with Agent's Guidance
 
@@ -503,8 +504,8 @@ az containerapp show \
 ### Step 3: Consult SRE Agent
 
 ```
-"My Container App shows status 'Failed' and won't start. 
-How can I see why it's failing?"
+My Container App (srepeter8-dev-api in resource group srepeter8-workshop) shows status 'Failed' and won't start. 
+How can I see why it's failing?
 ```
 
 ### Step 4: Check Revision Status
