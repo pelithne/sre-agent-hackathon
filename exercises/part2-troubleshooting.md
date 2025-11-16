@@ -313,6 +313,7 @@ APP_INSIGHTS_ID=$(az resource show \
     --resource-type "microsoft.insights/components" \
     --query "[0].id" -o tsv) \
   --query "properties.AppId" -o tsv)
+set_var "APP_INSIGHTS_ID" "$APP_INSIGHTS_ID"
 
 # Query slow requests
 az monitor app-insights query \
@@ -475,6 +476,7 @@ Diagnose why the container won't start and fix it.
 ```bash
 # Get the current API image and store it
 ACR_NAME=$(az acr list --resource-group $RESOURCE_GROUP --query "[0].name" -o tsv)
+set_var "ACR_NAME" "$ACR_NAME"
 set_var "API_IMAGE" "${ACR_NAME}.azurecr.io/workshop-api:v1.0.1"
 
 # Break the app by removing the required DATABASE_URL environment variable
@@ -585,6 +587,7 @@ IDENTITY_PRINCIPAL_ID=$(az identity show \
   --name ${BASE_NAME}-dev-identity \
   --resource-group $RESOURCE_GROUP \
   --query principalId -o tsv)
+set_var "IDENTITY_PRINCIPAL_ID" "$IDENTITY_PRINCIPAL_ID"
 
 az role assignment list \
   --assignee $IDENTITY_PRINCIPAL_ID \
@@ -653,6 +656,7 @@ The agent will guide you through checking APIM configuration.
 APIM_NAME=$(az apim list \
   --resource-group $RESOURCE_GROUP \
   --query "[0].name" -o tsv)
+set_var "APIM_NAME" "$APIM_NAME"
 
 # Check API settings
 az apim api show \
@@ -858,6 +862,7 @@ APP_INSIGHTS_ID=$(az resource show \
     --resource-type "microsoft.insights/components" \
     --query "[0].id" -o tsv) \
   --query "properties.AppId" -o tsv)
+set_var "APP_INSIGHTS_ID" "$APP_INSIGHTS_ID"
 
 # No recent requests should appear
 az monitor app-insights query \
@@ -908,11 +913,13 @@ APP_INSIGHTS_NAME=$(az resource list \
   --resource-group $RESOURCE_GROUP \
   --resource-type "microsoft.insights/components" \
   --query "[0].name" -o tsv)
+set_var "APP_INSIGHTS_NAME" "$APP_INSIGHTS_NAME"
 
 CORRECT_CONNECTION_STRING=$(az monitor app-insights component show \
   --app $APP_INSIGHTS_NAME \
   --resource-group $RESOURCE_GROUP \
   --query connectionString -o tsv)
+set_var "CORRECT_CONNECTION_STRING" "$CORRECT_CONNECTION_STRING"
 
 # Update the secret
 az containerapp secret set \
