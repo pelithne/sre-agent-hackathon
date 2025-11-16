@@ -20,6 +20,9 @@ param apimName string
 @description('API Management configuration settings')
 param apiManagementConfig object
 
+@description('Application Insights name (for logger reference)')
+param appInsightsName string
+
 // ============================================================================
 // Resources
 // ============================================================================
@@ -52,6 +55,29 @@ resource apimApi 'Microsoft.ApiManagement/service/apis@2023-09-01-preview' = {
     protocols: ['https']
     serviceUrl: containerAppUrl
     subscriptionRequired: true
+  }
+}
+
+// Reference existing Application Insights logger (created in Phase 1)
+resource apimLogger 'Microsoft.ApiManagement/service/loggers@2023-09-01-preview' existing = {
+  parent: apim
+  name: appInsightsName
+}
+
+// API-level diagnostic settings to send request telemetry to Application Insights
+resource apimApiDiagnostics 'Microsoft.ApiManagement/service/apis/diagnostics@2023-09-01-preview' = {
+  parent: apimApi
+  name: 'applicationinsights'
+  properties: {
+    loggerId: apimLogger.id
+    alwaysLog: 'allErrors'
+    sampling: {
+      samplingType: 'fixed'
+      percentage: 100
+    }
+    verbosity: 'information'
+    logClientIp: true
+    httpCorrelationProtocol: 'W3C'
   }
 }
 

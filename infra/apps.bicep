@@ -166,6 +166,7 @@ module apimConfiguration './modules/apim-configuration.bicep' = {
     containerAppUrl: containerApps.outputs.containerAppUrl
     apimName: existingApim.name
     apiManagementConfig: apiManagementConfig
+    appInsightsName: existingAppInsights.name
   }
 }
 
