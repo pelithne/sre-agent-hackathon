@@ -360,15 +360,22 @@ curl -X DELETE -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" "$API_URL/items
 
 ### Application Insights
 1. In your resource group, find and click on the Application Insights resource (name: `${BASE_NAME}-insights`)
-2. **Live Metrics**:
+2. **Application Map**:
+   - In the left menu under **Investigate**, click **Application map**
+   - You'll see a visual representation of your application architecture
+   - The map shows: Container App → PostgreSQL database dependencies
+   - Click on components to see detailed metrics (request rates, response times, failure rates)
+   - Click on connections between components to see dependency performance
+   - Note: The map populates after telemetry data is collected (make some API requests first)
+3. **Live Metrics**:
    - In the left menu under **Investigate**, click **Live Metrics**
    - Make some API requests using curl
    - Watch real-time telemetry: incoming requests, outgoing requests, overall health
-3. **Transaction Search**:
+4. **Transaction Search**:
    - In the left menu under **Investigate**, click **Transaction search**
    - Filter by event types (requests, dependencies, exceptions)
    - Click on individual requests to see detailed timing and dependencies
-4. **Logs (KQL Queries)**:
+5. **Logs (KQL Queries)**:
    - In the left menu under **Monitoring**, click **Logs**
    - Close the "Queries" dialog if it appears
    - Try these queries in the query editor:
@@ -441,8 +448,68 @@ Press `Ctrl+C` to stop following logs.
 
 ---
 
+## Step 12 (Optional): Enable Application Map
 
+> **Note:** By default, the Application Map in Application Insights will not show service dependencies because the container image doesn't include distributed tracing middleware. This is an optional step to enable it.
 
+### What is Application Map?
+
+Application Map provides a visual representation of your application architecture, showing:
+- How services connect to each other (Container App → PostgreSQL)
+- Request rates, response times, and failure rates for each component
+- Performance of dependencies and bottlenecks
+
+### Enable Distributed Tracing
+
+The source code has been prepared with distributed tracing support. To enable it:
+
+```bash
+# Rebuild the container image (changes already committed to main branch)
+az acr build \
+  --registry $ACR_NAME \
+  --image workshop-api:v1.1.0 \
+  --file src/api/Dockerfile \
+  src/api
+
+# Update the Container App to use the new image
+az containerapp update \
+  --name ${BASE_NAME}-dev-api \
+  --resource-group $RESOURCE_GROUP \
+  --image ${ACR_LOGIN_SERVER}/workshop-api:v1.1.0
+
+# Wait for the new revision to be deployed
+az containerapp revision list \
+  --name ${BASE_NAME}-dev-api \
+  --resource-group $RESOURCE_GROUP \
+  --output table
+
+# Generate some traffic to populate the Application Map
+for i in {1..20}; do
+  curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" "$API_URL/items" > /dev/null
+  echo "Request $i sent"
+  sleep 1
+done
+
+# Wait 2-3 minutes for telemetry to be processed
+echo "Waiting for telemetry to be processed (2 minutes)..."
+sleep 120
+
+# Now check Application Insights → Application Map in the Azure Portal
+echo "Application Map should now show Container App → PostgreSQL dependencies"
+echo "Navigate to: Application Insights → Investigate → Application map"
+```
+
+### What Changed?
+
+The updated container image includes:
+- `opencensus-ext-fastapi` - FastAPI middleware for request tracing
+- `opencensus-ext-requests` - HTTP dependency tracking
+- `opencensus-ext-postgresql` - Database dependency tracking
+- Distributed tracing middleware configured in `main.py`
+
+This enables Application Insights to build a complete dependency graph for the Application Map visualization.
+
+---
 
 ## Cleanup (Optional)
 
