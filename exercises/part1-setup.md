@@ -188,12 +188,6 @@ az deployment group create \
 Once deployment completes, verify all resources were created successfully:
 
 ```bash
-# Check deployment status
-az deployment group show \
-  --name $DEPLOYMENT_NAME \
-  --resource-group $RESOURCE_GROUP \
-  --query "properties.provisioningState"
-
 # List all resources in the resource group
 az resource list \
   --resource-group $RESOURCE_GROUP \
