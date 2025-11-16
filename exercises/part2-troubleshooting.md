@@ -35,18 +35,16 @@ If variables are missing, you can manually set them:
 # Set variables manually if needed
 set_var "BASE_NAME" "sre<your-initials>"
 set_var "RESOURCE_GROUP" "${BASE_NAME}-workshop"
-set_var "APIM_URL" "<your-apim-gateway-url>"
+set_var "APIM_GATEWAY_URL" "<your-apim-gateway-url>"
 set_var "SUBSCRIPTION_KEY" "<your-subscription-key>"
 
 # Verify all required variables are set
 verify_vars
 ```
 
-> **Tip**: To retrieve your APIM URL and subscription key if you've lost them, see the commands in Part 1, Step 9.
-
 ## Learning Objectives
 
-By the end of this exercise, you will:
+By the end of this exercise, you will have completed the following tasks:
 - Create and configure an Azure SRE Agent
 - Use natural language queries to investigate resource health
 - Diagnose API connectivity problems with AI assistance
@@ -136,7 +134,7 @@ First, verify your environment variables are set:
 
 ```bash
 # Verify variables are set
-echo "APIM URL: $APIM_URL"
+echo "APIM URL: $APIM_GATEWAY_URL"
 echo "Subscription Key: $SUBSCRIPTION_KEY"
 ```
 
@@ -149,7 +147,7 @@ curl -X POST \
   -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
   -H "Content-Type: application/json" \
   -d '{"name": "Test", "description": "Test item"}' \
-  "$APIM_URL/api/items"
+  "$APIM_GATEWAY_URL/api/items"
 ```
 
 ### Step 3: Gather Initial Information
@@ -247,7 +245,7 @@ curl -X POST \
   -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
   -H "Content-Type: application/json" \
   -d '{"name": "Fixed", "description": "After troubleshooting"}' \
-  "$APIM_URL/api/items" | jq .
+  "$APIM_GATEWAY_URL/api/items" | jq .
 ```
 
 ### Key Learnings
@@ -288,7 +286,7 @@ Wait about 30 seconds for the new revision to deploy with slow mode enabled.
 # Time a simple GET request - look at the "time_total" value
 curl -w "\nTime: %{time_total}s\n" -o /dev/null -s \
   -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
-  "$APIM_URL/api/items"
+  "$APIM_GATEWAY_URL/api/items"
 ```
 
 Run this a few times to see the response time. You should notice slower responses due to resource constraints.
@@ -404,7 +402,7 @@ Test the response time again:
 # Time a simple GET request - look at the "time_total" value
 curl -w "\nTime: %{time_total}s\n" -o /dev/null -s \
   -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
-  "$APIM_URL/api/items"
+  "$APIM_GATEWAY_URL/api/items"
 ```
 
 Response time should be back to normal (under 200ms).
@@ -447,7 +445,7 @@ az containerapp update \
 for i in {1..10}; do
   curl -w "Request $i - Time: %{time_total}s\n" -o /dev/null -s \
     -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
-    "$APIM_URL/api/items"
+    "$APIM_GATEWAY_URL/api/items"
 done
 ```
 
@@ -568,7 +566,7 @@ az containerapp revision list \
   --output table
 
 # Test the API
-curl -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" "$APIM_URL/health"
+curl -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" "$APIM_GATEWAY_URL/health"
 ```
 
 ### Advanced: Diagnose ACR Access Issues
@@ -634,7 +632,7 @@ Identify and fix the APIM timeout configuration.
 # Simulate a slow endpoint (if you have one)
 # Or observe timeout behavior
 curl -v -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
-  "$APIM_URL/api/items"
+  "$APIM_GATEWAY_URL/api/items"
 ```
 
 ### Step 2: Ask Azure SRE Agent
@@ -731,14 +729,14 @@ Diagnose and fix the connection pooling issue.
 # Simple load test (requires apache bench)
 ab -n 100 -c 10 \
   -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
-  "$APIM_URL/api/items"
+  "$APIM_GATEWAY_URL/api/items"
 ```
 
 Or use curl in a loop:
 ```bash
 for i in {1..50}; do
   curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
-    "$APIM_URL/api/items" &
+    "$APIM_GATEWAY_URL/api/items" &
 done
 wait
 ```
