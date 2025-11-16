@@ -168,6 +168,23 @@ resource apimApi 'Microsoft.ApiManagement/service/apis@2023-09-01-preview' = {
   }
 }
 
+// API-level diagnostic settings to ensure request telemetry is sent to Application Insights
+resource apimApiDiagnostics 'Microsoft.ApiManagement/service/apis/diagnostics@2023-09-01-preview' = {
+  parent: apimApi
+  name: 'applicationinsights'
+  properties: {
+    loggerId: apimLogger.id
+    alwaysLog: 'allErrors'
+    sampling: {
+      samplingType: 'fixed'
+      percentage: 100
+    }
+    verbosity: 'information'
+    logClientIp: true
+    httpCorrelationProtocol: 'W3C'
+  }
+}
+
 // Health check endpoint
 resource apimHealthOperation 'Microsoft.ApiManagement/service/apis/operations@2023-09-01-preview' = {
   parent: apimApi
