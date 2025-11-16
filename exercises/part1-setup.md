@@ -478,20 +478,6 @@ az acr delete --name $ACR_NAME --yes
 
 ---
 
-## Architecture Verification Checklist
-
-Before moving to Part 2, verify:
-
-- [ ] Container App is deployed and running
-- [ ] Health check endpoint returns 200 OK
-- [ ] At least one CRUD operation works (create or list items)
-- [ ] Application Insights shows recent requests
-- [ ] Container App is healthy in the Azure portal
-- [ ] PostgreSQL database is accessible from Container App
-- [ ] API URL is saved and accessible
-
----
-
 ## What's Next?
 
 Now that your infrastructure is deployed and tested, you're ready for:

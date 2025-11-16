@@ -1,6 +1,6 @@
 # SRE Agent Hackathon Workshop
 
-Master the Azure SRE Agent through hands-on incident response and troubleshooting! This workshop provides a realistic cloud environment where you'll learn to diagnose issues, handle alerts, and implement SRE best practices using Microsoft's intelligent SRE Agent.
+Master the Azure SRE Agent through hands-on incident response and troubleshooting. This workshop provides a realistic cloud environment where you'll learn to diagnose issues, handle alerts, and implement SRE best practices using Microsoft's intelligent SRE Agent.
 
 ## What You'll Learn
 
