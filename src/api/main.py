@@ -484,7 +484,14 @@ async def enable_chaos_fault(fault_type: str, config: ChaosConfig):
         chaos_state["cpu_spike"]["thread"] = thread
     
     logger.warning(f"CHAOS ENABLED: {fault_type} with intensity {chaos_state[fault_type]['intensity']}")
-    return {"status": "enabled", "fault": fault_type, "config": chaos_state[fault_type]}
+    return {
+        "status": "enabled",
+        "fault": fault_type,
+        "config": {
+            "enabled": chaos_state[fault_type]["enabled"],
+            "intensity": chaos_state[fault_type]["intensity"]
+        }
+    }
 
 @app.post("/admin/chaos/{fault_type}/disable", tags=["Chaos Engineering"])
 async def disable_chaos_fault(fault_type: str, config: ChaosConfig):
