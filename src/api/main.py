@@ -89,6 +89,7 @@ def memory_leak_thread():
     """Background thread that gradually leaks memory over time"""
     try:
         import psutil
+        import os
         
         logger.info("CHAOS: Memory leak thread started")
         
@@ -96,8 +97,33 @@ def memory_leak_thread():
         target_minutes = chaos_state["memory_leak"]["intensity"]
         target_seconds = target_minutes * 60
         
-        # Get available memory and calculate target (95% of available RAM)
-        available_memory = psutil.virtual_memory().available
+        # Detect container memory limit from cgroup (for containers) or use system memory
+        container_memory_limit = None
+        try:
+            # Try cgroup v2 first (newer systems)
+            if os.path.exists('/sys/fs/cgroup/memory.max'):
+                with open('/sys/fs/cgroup/memory.max', 'r') as f:
+                    limit_str = f.read().strip()
+                    if limit_str != 'max':
+                        container_memory_limit = int(limit_str)
+            # Try cgroup v1 (older systems)
+            elif os.path.exists('/sys/fs/cgroup/memory/memory.limit_in_bytes'):
+                with open('/sys/fs/cgroup/memory/memory.limit_in_bytes', 'r') as f:
+                    container_memory_limit = int(f.read().strip())
+        except Exception as e:
+            logger.warning(f"CHAOS: Could not read cgroup memory limit: {e}")
+        
+        # Determine available memory: use container limit if available, otherwise system memory
+        if container_memory_limit and container_memory_limit < (2**63 - 1):  # Check for unrealistic values
+            # For containers, use 95% of the container memory limit
+            available_memory = container_memory_limit
+            logger.info(f"CHAOS: Detected container memory limit: {available_memory / (1024**3):.2f} GB")
+        else:
+            # For non-containerized environments, use available system memory
+            available_memory = psutil.virtual_memory().available
+            logger.info(f"CHAOS: Using system available memory: {available_memory / (1024**3):.2f} GB")
+        
+        # Calculate target (95% of available memory)
         target_memory = int(available_memory * 0.95)
         
         # Calculate chunk size and sleep interval
