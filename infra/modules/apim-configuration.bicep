@@ -160,7 +160,7 @@ resource listItemsOperation 'Microsoft.ApiManagement/service/apis/operations@202
   properties: {
     displayName: 'List Items'
     method: 'GET'
-    urlTemplate: '/items'
+    urlTemplate: '/api/items'
     description: 'Get all items from the database'
     responses: [
       {
@@ -183,7 +183,7 @@ resource createItemOperation 'Microsoft.ApiManagement/service/apis/operations@20
   properties: {
     displayName: 'Create Item'
     method: 'POST'
-    urlTemplate: '/items'
+    urlTemplate: '/api/items'
     description: 'Create a new item in the database'
     request: {
       representations: [
@@ -217,7 +217,7 @@ resource getItemOperation 'Microsoft.ApiManagement/service/apis/operations@2023-
   properties: {
     displayName: 'Get Item'
     method: 'GET'
-    urlTemplate: '/items/{id}'
+    urlTemplate: '/api/items/{id}'
     description: 'Get a specific item by ID'
     templateParameters: [
       {
@@ -252,7 +252,7 @@ resource updateItemOperation 'Microsoft.ApiManagement/service/apis/operations@20
   properties: {
     displayName: 'Update Item'
     method: 'PUT'
-    urlTemplate: '/items/{id}'
+    urlTemplate: '/api/items/{id}'
     description: 'Update an existing item'
     templateParameters: [
       {
@@ -294,7 +294,7 @@ resource deleteItemOperation 'Microsoft.ApiManagement/service/apis/operations@20
   properties: {
     displayName: 'Delete Item'
     method: 'DELETE'
-    urlTemplate: '/items/{id}'
+    urlTemplate: '/api/items/{id}'
     description: 'Delete an item by ID'
     templateParameters: [
       {
