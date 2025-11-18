@@ -478,10 +478,13 @@ async def enable_chaos_fault(fault_type: str, config: ChaosConfig):
         chaos_state[fault_type]["intensity"] = config.intensity
     
     # Special handling for CPU spike - start background thread
-    if fault_type == "cpu_spike" and chaos_state["cpu_spike"]["thread"] is None:
-        thread = threading.Thread(target=cpu_burn_thread, daemon=True)
-        thread.start()
-        chaos_state["cpu_spike"]["thread"] = thread
+    if fault_type == "cpu_spike":
+        current_thread = chaos_state["cpu_spike"]["thread"]
+        # Start new thread if none exists or if the existing one is not alive
+        if current_thread is None or not current_thread.is_alive():
+            thread = threading.Thread(target=cpu_burn_thread, daemon=True)
+            thread.start()
+            chaos_state["cpu_spike"]["thread"] = thread
     
     logger.warning(f"CHAOS ENABLED: {fault_type} with intensity {chaos_state[fault_type]['intensity']}")
     return {
@@ -507,6 +510,11 @@ async def disable_chaos_fault(fault_type: str, config: ChaosConfig):
         chaos_state["memory_leak"]["leak_data"].clear()
         gc.collect()
         logger.info("CHAOS: Cleared leaked memory and ran garbage collection")
+    
+    elif fault_type == "cpu_spike":
+        # Clear thread reference so it can be restarted
+        chaos_state["cpu_spike"]["thread"] = None
+        logger.info("CHAOS: CPU spike thread reference cleared")
     
     elif fault_type == "connection_leak":
         # Close all leaked connections
