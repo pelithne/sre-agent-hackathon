@@ -46,6 +46,7 @@ chaos_state = {
     "slow_responses": {"enabled": False, "intensity": 3.0},  # 3 second delay
     "connection_leak": {"enabled": False, "intensity": 50, "leaked_connections": []},
     "corrupt_data": {"enabled": False, "intensity": 20},  # 20% corruption rate
+    "crash_app": {"enabled": False, "intensity": 5},  # intensity = seconds delay before crash
 }
 
 def get_db_connection():
@@ -415,6 +416,7 @@ async def chaos_dashboard():
             <h2>Master Controls</h2>
             <button class="btn-master" onclick="disableAll()">Disable All Faults</button>
             <button class="btn-master" onclick="refreshStatus()">Refresh Status</button>
+            <button class="btn-master" style="background-color: #ff5252; color: white;" onclick="crashApp()">💥 Crash App Now</button>
         </div>
 
         <div id="faults-container"></div>
@@ -474,6 +476,15 @@ async def chaos_dashboard():
                     min: 1,
                     max: 100,
                     step: 5
+                },
+                {
+                    key: 'crash_app',
+                    title: '💥 Crash the App',
+                    description: 'Terminates the application with a fatal error. Intensity controls delay in seconds before crash.',
+                    intensityLabel: 'Delay (s)',
+                    min: 1,
+                    max: 30,
+                    step: 1
                 }
             ];
 
@@ -504,6 +515,16 @@ async def chaos_dashboard():
             async function disableAll() {
                 for (const fault of faults) {
                     await disableFault(fault.key);
+                }
+            }
+
+            async function crashApp() {
+                if (confirm('⚠️ This will immediately crash the application! Are you sure?')) {
+                    await fetch('/admin/chaos/crash_app/enable', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({enabled: true, intensity: 0})
+                    });
                 }
             }
 
@@ -599,6 +620,20 @@ async def enable_chaos_fault(fault_type: str, config: ChaosConfig):
             thread = threading.Thread(target=memory_leak_thread, daemon=True)
             thread.start()
             chaos_state["memory_leak"]["thread"] = thread
+    
+    # Special handling for crash - trigger immediate or delayed crash
+    elif fault_type == "crash_app":
+        delay = chaos_state["crash_app"]["intensity"]
+        def crash_with_delay():
+            if delay > 0:
+                logger.error(f"Application will crash in {delay} seconds...")
+                time.sleep(delay)
+            logger.critical("Application crash initiated by chaos engineering")
+            # Trigger a fatal error
+            os._exit(1)
+        
+        thread = threading.Thread(target=crash_with_delay, daemon=False)
+        thread.start()
     
     return {
         "status": "enabled",
