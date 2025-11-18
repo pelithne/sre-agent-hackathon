@@ -442,7 +442,7 @@ async def chaos_dashboard():
     <body>
         <h1>🔥 Chaos Engineering Dashboard</h1>
         
-        <div class="master-controls hidden" id="master-controls">
+        <div class="master-controls" id="master-controls">
             <h2>Master Controls</h2>
             <button class="btn-master" onclick="disableAll()">Disable All Faults</button>
             <button class="btn-master" onclick="refreshStatus()">Refresh Status</button>
@@ -598,8 +598,7 @@ async def chaos_dashboard():
                     container.appendChild(card);
                 });
                 
-                // Show sections after first load
-                document.getElementById('master-controls').classList.remove('hidden');
+                // Show danger zone after first load
                 document.getElementById('danger-zone').classList.remove('hidden');
             }
 
