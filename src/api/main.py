@@ -58,7 +58,7 @@ def get_db_connection():
         
         # Chaos: Connection leak simulation
         if chaos_state["connection_leak"]["enabled"] and random.randint(1, 100) <= chaos_state["connection_leak"]["intensity"]:
-            logger.warning("CHAOS: Leaking database connection (not closing)")
+            logger.debug("Database connection allocated but not returned to pool")
             chaos_state["connection_leak"]["leaked_connections"].append(conn)
             # Return a new connection instead, leaking the previous one
             conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
@@ -70,7 +70,7 @@ def get_db_connection():
 
 def cpu_burn_thread():
     """Background thread that burns CPU cycles"""
-    logger.info("CHAOS: CPU burn thread started")
+    logger.debug("Background processing thread started")
     while chaos_state["cpu_spike"]["enabled"]:
         # Burn CPU based on intensity (0-100)
         intensity = chaos_state["cpu_spike"]["intensity"]
@@ -83,7 +83,7 @@ def cpu_burn_thread():
         
         if sleep_duration > 0:
             time.sleep(sleep_duration)
-    logger.info("CHAOS: CPU burn thread stopped")
+    logger.debug("Background processing thread stopped")
 
 def memory_leak_thread():
     """Background thread that gradually leaks memory over time"""
@@ -91,7 +91,7 @@ def memory_leak_thread():
         import psutil
         import os
         
-        logger.info("CHAOS: Memory leak thread started")
+        logger.debug("Memory allocation")
         
         # Get target duration in seconds
         target_minutes = chaos_state["memory_leak"]["intensity"]
@@ -111,17 +111,17 @@ def memory_leak_thread():
                 with open('/sys/fs/cgroup/memory/memory.limit_in_bytes', 'r') as f:
                     container_memory_limit = int(f.read().strip())
         except Exception as e:
-            logger.warning(f"CHAOS: Could not read cgroup memory limit: {e}")
+            logger.warning(f"Could not read cgroup memory limit: {e}")
         
         # Determine available memory: use container limit if available, otherwise system memory
         if container_memory_limit and container_memory_limit < (2**63 - 1):  # Check for unrealistic values
             # For containers, use 95% of the container memory limit
             available_memory = container_memory_limit
-            logger.info(f"CHAOS: Detected container memory limit: {available_memory / (1024**3):.2f} GB")
+            logger.info(f"Detected container memory limit: {available_memory / (1024**3):.2f} GB")
         else:
             # For non-containerized environments, use available system memory
             available_memory = psutil.virtual_memory().available
-            logger.info(f"CHAOS: Using system available memory: {available_memory / (1024**3):.2f} GB")
+            logger.info(f"Using system available memory: {available_memory / (1024**3):.2f} GB")
         
         # Calculate target (95% of available memory)
         target_memory = int(available_memory * 0.95)
@@ -131,7 +131,7 @@ def memory_leak_thread():
         chunk_size = max(1024 * 1024, target_memory // target_seconds)  # At least 1MB chunks
         sleep_interval = 1.0  # Leak every second
         
-        logger.warning(f"CHAOS: Memory leak configured - will leak ~{target_memory / (1024**3):.2f} GB over {target_minutes} minutes")
+        logger.info(f"Allocating memory buffer: targeting {target_memory / (1024**3):.2f} GB over {target_minutes} minutes")
         
         leaked_bytes = 0
         while chaos_state["memory_leak"]["enabled"] and leaked_bytes < target_memory:
@@ -145,26 +145,26 @@ def memory_leak_thread():
                 leaked_bytes += chunk_size
                 
                 if len(chaos_state["memory_leak"]["leak_data"]) % 100 == 0:  # Log every 100 chunks
-                    logger.warning(f"CHAOS: Leaked {leaked_bytes / (1024**2):.1f} MB / {target_memory / (1024**2):.1f} MB ({leaked_bytes / target_memory * 100:.1f}%)")
+                    logger.info(f"Memory allocated: {leaked_bytes / (1024**2):.1f} MB / {target_memory / (1024**2):.1f} MB ({leaked_bytes / target_memory * 100:.1f}%)")
                 
                 time.sleep(sleep_interval)
             except MemoryError:
-                logger.error("CHAOS: Memory allocation failed - memory limit reached")
+                logger.error("Memory allocation failed - container memory limit reached")
                 break
         
         # Keep the memory leaked until disabled
         if chaos_state["memory_leak"]["enabled"]:
-            logger.warning(f"CHAOS: Memory leak target reached - leaked {leaked_bytes / (1024**3):.2f} GB - holding memory until disabled")
+            logger.warning(f"Memory allocation complete: {leaked_bytes / (1024**3):.2f} GB allocated - monitoring memory usage")
             # Hold the memory by waiting while enabled
             while chaos_state["memory_leak"]["enabled"]:
                 time.sleep(1)
-            logger.info("CHAOS: Memory leak disabled - memory will be released")
+            logger.info("Releasing allocated memory buffers")
         else:
-            logger.info("CHAOS: Memory leak thread stopped")
+            logger.debug("Memory allocation thread stopped")
     except ImportError as e:
-        logger.error(f"CHAOS: Failed to import psutil - memory leak cannot start: {e}")
+        logger.error(f"Failed to import psutil - memory monitoring unavailable: {e}")
     except Exception as e:
-        logger.error(f"CHAOS: Memory leak thread failed with error: {e}")
+        logger.error(f"Memory allocation thread error: {e}")
         import traceback
         logger.error(traceback.format_exc())
 
@@ -186,19 +186,19 @@ def apply_chaos_middleware():
                 "Unexpected error occurred",
                 "Resource not available"
             ]
-            logger.error(f"CHAOS: Injecting random error")
-            raise HTTPException(status_code=500, detail=random.choice(error_messages))
+            logger.error(f"Request failed: {random.choice(error_messages)}")
+            raise HTTPException(status_code=500, detail=error_messages[-1])
     
     # Slow responses
     if chaos_state["slow_responses"]["enabled"]:
         delay = chaos_state["slow_responses"]["intensity"]
-        logger.warning(f"CHAOS: Injecting {delay}s delay")
+        logger.debug(f"Processing request: {delay}s")
         time.sleep(delay)
 
 def apply_slow_mode():
     """Apply artificial delay if SLOW_MODE_DELAY is set"""
     if SLOW_MODE_DELAY > 0:
-        logger.warning(f"SLOW_MODE enabled: Delaying request by {SLOW_MODE_DELAY}s")
+        logger.warning(f"S-MODE enabled")
         time.sleep(SLOW_MODE_DELAY)
 
 @asynccontextmanager
@@ -206,7 +206,6 @@ async def lifespan(app: FastAPI):
     """Lifecycle management for the FastAPI app"""
     # Startup
     logger.info("Starting Workshop API...")
-    logger.info(f"SLOW_MODE_DELAY configured: {SLOW_MODE_DELAY}s")
     logger.info(f"Port: {PORT}")
     logger.info(f"Database configured: {bool(DATABASE_URL)}")
     logger.info(f"Application Insights configured: {bool(APPLICATIONINSIGHTS_CONNECTION_STRING)}")
@@ -289,7 +288,7 @@ async def chaos_middleware(request: Request, call_next):
     # Chaos: Corrupt response data
     if chaos_state["corrupt_data"]["enabled"] and request.url.path.startswith("/api/"):
         if random.randint(1, 100) <= chaos_state["corrupt_data"]["intensity"]:
-            logger.warning("CHAOS: Corrupting response data")
+            logger.error("Response serialization error - data integrity issue detected")
             return JSONResponse(
                 status_code=200,
                 content={"corrupted": True, "error": "Data corruption injected", "random": random.random()}
@@ -601,7 +600,6 @@ async def enable_chaos_fault(fault_type: str, config: ChaosConfig):
             thread.start()
             chaos_state["memory_leak"]["thread"] = thread
     
-    logger.warning(f"CHAOS ENABLED: {fault_type} with intensity {chaos_state[fault_type]['intensity']}")
     return {
         "status": "enabled",
         "fault": fault_type,
@@ -625,12 +623,12 @@ async def disable_chaos_fault(fault_type: str, config: ChaosConfig):
         chaos_state["memory_leak"]["leak_data"].clear()
         chaos_state["memory_leak"]["thread"] = None
         gc.collect()
-        logger.info("CHAOS: Cleared leaked memory and ran garbage collection")
+        logger.info("Memory buffers released and garbage collection completed")
     
     elif fault_type == "cpu_spike":
         # Clear thread reference so it can be restarted
         chaos_state["cpu_spike"]["thread"] = None
-        logger.info("CHAOS: CPU spike thread reference cleared")
+        logger.debug("Background processing thread stopped")
     
     elif fault_type == "connection_leak":
         # Close all leaked connections
@@ -640,9 +638,8 @@ async def disable_chaos_fault(fault_type: str, config: ChaosConfig):
             except:
                 pass
         chaos_state["connection_leak"]["leaked_connections"].clear()
-        logger.info("CHAOS: Closed all leaked database connections")
+        logger.info("Database connection cleanup completed")
     
-    logger.info(f"CHAOS DISABLED: {fault_type}")
     return {"status": "disabled", "fault": fault_type}
 
 @app.post("/admin/chaos/disable-all", tags=["Chaos Engineering"])
