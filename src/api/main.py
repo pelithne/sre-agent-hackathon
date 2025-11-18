@@ -434,12 +434,15 @@ async def chaos_dashboard():
                 background-color: #fff;
                 color: #b71c1c;
             }
+            .hidden {
+                display: none;
+            }
         </style>
     </head>
     <body>
         <h1>🔥 Chaos Engineering Dashboard</h1>
         
-        <div class="master-controls">
+        <div class="master-controls hidden" id="master-controls">
             <h2>Master Controls</h2>
             <button class="btn-master" onclick="disableAll()">Disable All Faults</button>
             <button class="btn-master" onclick="refreshStatus()">Refresh Status</button>
@@ -594,6 +597,10 @@ async def chaos_dashboard():
                     `;
                     container.appendChild(card);
                 });
+                
+                // Show sections after first load
+                document.getElementById('master-controls').classList.remove('hidden');
+                document.getElementById('danger-zone').classList.remove('hidden');
             }
 
             // Initial load
@@ -603,7 +610,7 @@ async def chaos_dashboard():
             setInterval(refreshStatus, 5000);
         </script>
 
-        <div class="danger-zone">
+        <div class="danger-zone hidden" id="danger-zone">
             <h2>⚠️ Danger Zone!</h2>
             <p>The action below will immediately terminate the application.</p>
             <button class="btn-danger" onclick="crashApp()">💥 Crash App Now</button>
