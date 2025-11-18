@@ -407,6 +407,33 @@ async def chaos_dashboard():
                 color: #667eea;
                 margin: 5px;
             }
+            .danger-zone {
+                background: linear-gradient(135deg, #ff5252 0%, #d32f2f 100%);
+                color: white;
+                padding: 20px;
+                border-radius: 8px;
+                margin-top: 30px;
+                text-align: center;
+                border: 3px solid #b71c1c;
+            }
+            .danger-zone h2 {
+                margin-top: 0;
+                font-size: 24px;
+            }
+            .btn-danger {
+                background-color: #ffebee;
+                color: #c62828;
+                padding: 15px 30px;
+                font-size: 16px;
+                font-weight: bold;
+                border: 2px solid #fff;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+            .btn-danger:hover {
+                background-color: #fff;
+                color: #b71c1c;
+            }
         </style>
     </head>
     <body>
@@ -416,7 +443,6 @@ async def chaos_dashboard():
             <h2>Master Controls</h2>
             <button class="btn-master" onclick="disableAll()">Disable All Faults</button>
             <button class="btn-master" onclick="refreshStatus()">Refresh Status</button>
-            <button class="btn-master" style="background-color: #ff5252; color: white;" onclick="crashApp()">💥 Crash App Now</button>
         </div>
 
         <div id="faults-container"></div>
@@ -576,6 +602,12 @@ async def chaos_dashboard():
             // Auto-refresh every 5 seconds
             setInterval(refreshStatus, 5000);
         </script>
+
+        <div class="danger-zone">
+            <h2>⚠️ Danger Zone!</h2>
+            <p>The action below will immediately terminate the application.</p>
+            <button class="btn-danger" onclick="crashApp()">💥 Crash App Now</button>
+        </div>
     </body>
     </html>
     """
