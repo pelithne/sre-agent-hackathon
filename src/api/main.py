@@ -40,7 +40,7 @@ db_pool = None
 
 # Chaos Engineering State
 chaos_state = {
-    "memory_leak": {"enabled": False, "intensity": 50, "leak_data": []},
+    "memory_leak": {"enabled": False, "intensity": 5, "leak_data": [], "thread": None},  # intensity = minutes to 95% RAM
     "cpu_spike": {"enabled": False, "intensity": 50, "thread": None},
     "random_errors": {"enabled": False, "intensity": 30},  # 30% error rate
     "slow_responses": {"enabled": False, "intensity": 3.0},  # 3 second delay
@@ -85,14 +85,51 @@ def cpu_burn_thread():
             time.sleep(sleep_duration)
     logger.info("CHAOS: CPU burn thread stopped")
 
+def memory_leak_thread():
+    """Background thread that gradually leaks memory over time"""
+    import psutil
+    
+    logger.info("CHAOS: Memory leak thread started")
+    
+    # Get target duration in seconds
+    target_minutes = chaos_state["memory_leak"]["intensity"]
+    target_seconds = target_minutes * 60
+    
+    # Get available memory and calculate target (95% of available RAM)
+    available_memory = psutil.virtual_memory().available
+    target_memory = int(available_memory * 0.95)
+    
+    # Calculate chunk size and sleep interval
+    # Leak in small increments every second for smooth progression
+    chunk_size = max(1024 * 1024, target_memory // target_seconds)  # At least 1MB chunks
+    sleep_interval = 1.0  # Leak every second
+    
+    logger.warning(f"CHAOS: Memory leak configured - will leak ~{target_memory / (1024**3):.2f} GB over {target_minutes} minutes")
+    
+    leaked_bytes = 0
+    while chaos_state["memory_leak"]["enabled"] and leaked_bytes < target_memory:
+        try:
+            data = bytearray(chunk_size)
+            chaos_state["memory_leak"]["leak_data"].append(data)
+            leaked_bytes += chunk_size
+            
+            if len(chaos_state["memory_leak"]["leak_data"]) % 100 == 0:  # Log every 100 chunks
+                logger.warning(f"CHAOS: Leaked {leaked_bytes / (1024**2):.1f} MB / {target_memory / (1024**2):.1f} MB ({leaked_bytes / target_memory * 100:.1f}%)")
+            
+            time.sleep(sleep_interval)
+        except MemoryError:
+            logger.error("CHAOS: Memory allocation failed - memory limit reached")
+            break
+    
+    if chaos_state["memory_leak"]["enabled"]:
+        logger.warning(f"CHAOS: Memory leak target reached - leaked {leaked_bytes / (1024**3):.2f} GB")
+    else:
+        logger.info("CHAOS: Memory leak thread stopped")
+
 def trigger_memory_leak():
     """Allocate memory that won't be freed"""
-    if chaos_state["memory_leak"]["enabled"]:
-        # Allocate based on intensity (KB)
-        size = chaos_state["memory_leak"]["intensity"] * 1024  # intensity in KB
-        data = bytearray(size)
-        chaos_state["memory_leak"]["leak_data"].append(data)
-        logger.warning(f"CHAOS: Leaked {size} bytes of memory. Total leaked: {len(chaos_state['memory_leak']['leak_data'])} chunks")
+    # This function is no longer used - memory leak is now background thread based
+    pass
 
 def apply_chaos_middleware():
     """Apply chaos engineering faults to the current request"""
@@ -115,10 +152,6 @@ def apply_chaos_middleware():
         delay = chaos_state["slow_responses"]["intensity"]
         logger.warning(f"CHAOS: Injecting {delay}s delay")
         time.sleep(delay)
-    
-    # Memory leak (trigger on each request)
-    if chaos_state["memory_leak"]["enabled"]:
-        trigger_memory_leak()
 
 def apply_slow_mode():
     """Apply artificial delay if SLOW_MODE_DELAY is set"""
@@ -349,8 +382,8 @@ async def chaos_dashboard():
                 {
                     key: 'memory_leak',
                     title: 'Memory Leak',
-                    description: 'Gradually consumes memory with each request. Intensity controls KB leaked per request.',
-                    intensityLabel: 'KB per request'
+                    description: 'Gradually leaks memory in background thread until 95% RAM consumed. Intensity controls duration in minutes.',
+                    intensityLabel: 'Minutes'
                 },
                 {
                     key: 'cpu_spike',
@@ -486,6 +519,15 @@ async def enable_chaos_fault(fault_type: str, config: ChaosConfig):
             thread.start()
             chaos_state["cpu_spike"]["thread"] = thread
     
+    # Special handling for memory leak - start background thread
+    elif fault_type == "memory_leak":
+        current_thread = chaos_state["memory_leak"]["thread"]
+        # Start new thread if none exists or if the existing one is not alive
+        if current_thread is None or not current_thread.is_alive():
+            thread = threading.Thread(target=memory_leak_thread, daemon=True)
+            thread.start()
+            chaos_state["memory_leak"]["thread"] = thread
+    
     logger.warning(f"CHAOS ENABLED: {fault_type} with intensity {chaos_state[fault_type]['intensity']}")
     return {
         "status": "enabled",
@@ -508,6 +550,7 @@ async def disable_chaos_fault(fault_type: str, config: ChaosConfig):
     if fault_type == "memory_leak":
         # Clear leaked memory
         chaos_state["memory_leak"]["leak_data"].clear()
+        chaos_state["memory_leak"]["thread"] = None
         gc.collect()
         logger.info("CHAOS: Cleared leaked memory and ran garbage collection")
     
