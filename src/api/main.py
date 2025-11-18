@@ -1,17 +1,20 @@
 """
 Workshop API - A sample API for Azure SRE Agent Workshop
-Demonstrates: PostgreSQL connectivity, REST endpoints, Application Insights integration
+Demonstrates: PostgreSQL connectivity, REST endpoints, Application Insights integration, Chaos Engineering
 """
 
 import os
 import logging
 import time
-from typing import Optional, List
+import random
+import threading
+import gc
+from typing import Optional, List, Dict, Any
 from datetime import datetime
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Depends
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, HTTPException, Depends, Request
+from fastapi.responses import JSONResponse, HTMLResponse
 from pydantic import BaseModel
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -35,6 +38,16 @@ if APPLICATIONINSIGHTS_CONNECTION_STRING:
 # Database connection pool
 db_pool = None
 
+# Chaos Engineering State
+chaos_state = {
+    "memory_leak": {"enabled": False, "intensity": 50, "leak_data": []},
+    "cpu_spike": {"enabled": False, "intensity": 50, "thread": None},
+    "random_errors": {"enabled": False, "intensity": 30},  # 30% error rate
+    "slow_responses": {"enabled": False, "intensity": 3.0},  # 3 second delay
+    "connection_leak": {"enabled": False, "intensity": 50, "leaked_connections": []},
+    "corrupt_data": {"enabled": False, "intensity": 20},  # 20% corruption rate
+}
+
 def get_db_connection():
     """Get a database connection from the pool"""
     if not DATABASE_URL:
@@ -42,10 +55,70 @@ def get_db_connection():
     
     try:
         conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+        
+        # Chaos: Connection leak simulation
+        if chaos_state["connection_leak"]["enabled"] and random.randint(1, 100) <= chaos_state["connection_leak"]["intensity"]:
+            logger.warning("CHAOS: Leaking database connection (not closing)")
+            chaos_state["connection_leak"]["leaked_connections"].append(conn)
+            # Return a new connection instead, leaking the previous one
+            conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+        
         return conn
     except Exception as e:
         logger.error(f"Database connection error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database connection failed: {str(e)}")
+
+def cpu_burn_thread():
+    """Background thread that burns CPU cycles"""
+    logger.info("CHAOS: CPU burn thread started")
+    while chaos_state["cpu_spike"]["enabled"]:
+        # Burn CPU based on intensity (0-100)
+        intensity = chaos_state["cpu_spike"]["intensity"]
+        burn_duration = intensity / 1000.0  # Max 100ms of burning
+        sleep_duration = (100 - intensity) / 1000.0  # Rest of the time sleeping
+        
+        start = time.time()
+        while time.time() - start < burn_duration:
+            _ = sum(i * i for i in range(1000))  # Busy work
+        
+        if sleep_duration > 0:
+            time.sleep(sleep_duration)
+    logger.info("CHAOS: CPU burn thread stopped")
+
+def trigger_memory_leak():
+    """Allocate memory that won't be freed"""
+    if chaos_state["memory_leak"]["enabled"]:
+        # Allocate based on intensity (KB)
+        size = chaos_state["memory_leak"]["intensity"] * 1024  # intensity in KB
+        data = bytearray(size)
+        chaos_state["memory_leak"]["leak_data"].append(data)
+        logger.warning(f"CHAOS: Leaked {size} bytes of memory. Total leaked: {len(chaos_state['memory_leak']['leak_data'])} chunks")
+
+def apply_chaos_middleware():
+    """Apply chaos engineering faults to the current request"""
+    
+    # Random errors
+    if chaos_state["random_errors"]["enabled"]:
+        if random.randint(1, 100) <= chaos_state["random_errors"]["intensity"]:
+            error_messages = [
+                "Internal server error",
+                "Service temporarily unavailable",
+                "Database connection timeout",
+                "Unexpected error occurred",
+                "Resource not available"
+            ]
+            logger.error(f"CHAOS: Injecting random error")
+            raise HTTPException(status_code=500, detail=random.choice(error_messages))
+    
+    # Slow responses
+    if chaos_state["slow_responses"]["enabled"]:
+        delay = chaos_state["slow_responses"]["intensity"]
+        logger.warning(f"CHAOS: Injecting {delay}s delay")
+        time.sleep(delay)
+    
+    # Memory leak (trigger on each request)
+    if chaos_state["memory_leak"]["enabled"]:
+        trigger_memory_leak()
 
 def apply_slow_mode():
     """Apply artificial delay if SLOW_MODE_DELAY is set"""
@@ -121,6 +194,326 @@ class ItemResponse(Item):
     created_at: datetime
     updated_at: datetime
 
+class ChaosConfig(BaseModel):
+    enabled: bool
+    intensity: Optional[int] = None
+
+# Middleware to apply chaos engineering faults
+@app.middleware("http")
+async def chaos_middleware(request: Request, call_next):
+    """Apply chaos faults to requests going to /api/* endpoints"""
+    # Only apply chaos to business API endpoints, not admin endpoints
+    if request.url.path.startswith("/api/"):
+        try:
+            apply_chaos_middleware()
+        except HTTPException:
+            raise
+    
+    response = await call_next(request)
+    
+    # Chaos: Corrupt response data
+    if chaos_state["corrupt_data"]["enabled"] and request.url.path.startswith("/api/"):
+        if random.randint(1, 100) <= chaos_state["corrupt_data"]["intensity"]:
+            logger.warning("CHAOS: Corrupting response data")
+            return JSONResponse(
+                status_code=200,
+                content={"corrupted": True, "error": "Data corruption injected", "random": random.random()}
+            )
+    
+    return response
+
+# =============================================================================
+# CHAOS ENGINEERING / ADMIN ENDPOINTS
+# =============================================================================
+
+@app.get("/admin/chaos", response_class=HTMLResponse, tags=["Chaos Engineering"])
+async def chaos_dashboard():
+    """HTML dashboard for chaos engineering controls"""
+    html_content = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Chaos Engineering Dashboard</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 20px;
+                background-color: #f5f5f5;
+            }
+            h1 { color: #d32f2f; }
+            .fault-card {
+                background: white;
+                border-radius: 8px;
+                padding: 20px;
+                margin: 15px 0;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .fault-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 15px;
+            }
+            .fault-title {
+                font-size: 18px;
+                font-weight: bold;
+                color: #333;
+            }
+            .status {
+                padding: 5px 15px;
+                border-radius: 20px;
+                font-size: 14px;
+                font-weight: bold;
+            }
+            .status.enabled {
+                background-color: #f44336;
+                color: white;
+            }
+            .status.disabled {
+                background-color: #4caf50;
+                color: white;
+            }
+            .controls {
+                display: flex;
+                gap: 10px;
+                align-items: center;
+                margin-top: 10px;
+            }
+            button {
+                padding: 10px 20px;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 14px;
+                font-weight: bold;
+            }
+            .btn-enable {
+                background-color: #f44336;
+                color: white;
+            }
+            .btn-disable {
+                background-color: #4caf50;
+                color: white;
+            }
+            .btn-enable:hover {
+                background-color: #d32f2f;
+            }
+            .btn-disable:hover {
+                background-color: #45a049;
+            }
+            input[type="range"] {
+                flex-grow: 1;
+                margin: 0 10px;
+            }
+            .intensity-label {
+                min-width: 60px;
+                text-align: right;
+                font-weight: bold;
+                color: #666;
+            }
+            .description {
+                color: #666;
+                font-size: 14px;
+                margin-top: 10px;
+            }
+            .master-controls {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 20px;
+                border-radius: 8px;
+                margin-bottom: 20px;
+                text-align: center;
+            }
+            .btn-master {
+                background-color: white;
+                color: #667eea;
+                margin: 5px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>🔥 Chaos Engineering Dashboard</h1>
+        
+        <div class="master-controls">
+            <h2>Master Controls</h2>
+            <button class="btn-master" onclick="disableAll()">Disable All Faults</button>
+            <button class="btn-master" onclick="refreshStatus()">Refresh Status</button>
+        </div>
+
+        <div id="faults-container"></div>
+
+        <script>
+            const faults = [
+                {
+                    key: 'memory_leak',
+                    title: 'Memory Leak',
+                    description: 'Gradually consumes memory with each request. Intensity controls KB leaked per request.',
+                    intensityLabel: 'KB per request'
+                },
+                {
+                    key: 'cpu_spike',
+                    title: 'CPU Spike',
+                    description: 'Spawns background thread burning CPU cycles. Intensity controls CPU utilization (0-100%).',
+                    intensityLabel: 'CPU %'
+                },
+                {
+                    key: 'random_errors',
+                    title: 'Random Errors',
+                    description: 'Returns HTTP 500 errors randomly. Intensity controls error rate percentage.',
+                    intensityLabel: 'Error rate %'
+                },
+                {
+                    key: 'slow_responses',
+                    title: 'Slow Responses',
+                    description: 'Adds artificial delay to responses. Intensity controls delay in seconds.',
+                    intensityLabel: 'Delay (s)'
+                },
+                {
+                    key: 'connection_leak',
+                    title: 'Connection Leak',
+                    description: 'Leaks database connections without closing them. Intensity controls leak probability.',
+                    intensityLabel: 'Leak rate %'
+                },
+                {
+                    key: 'corrupt_data',
+                    title: 'Corrupt Data',
+                    description: 'Returns corrupted JSON responses. Intensity controls corruption rate percentage.',
+                    intensityLabel: 'Corruption rate %'
+                }
+            ];
+
+            async function fetchStatus() {
+                const response = await fetch('/admin/chaos/status');
+                return await response.json();
+            }
+
+            async function enableFault(faultKey) {
+                const intensity = document.getElementById(`intensity-${faultKey}`).value;
+                await fetch(`/admin/chaos/${faultKey}/enable`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({enabled: true, intensity: parseInt(intensity)})
+                });
+                await refreshStatus();
+            }
+
+            async function disableFault(faultKey) {
+                await fetch(`/admin/chaos/${faultKey}/disable`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({enabled: false})
+                });
+                await refreshStatus();
+            }
+
+            async function disableAll() {
+                for (const fault of faults) {
+                    await disableFault(fault.key);
+                }
+            }
+
+            async function refreshStatus() {
+                const status = await fetchStatus();
+                const container = document.getElementById('faults-container');
+                container.innerHTML = '';
+
+                faults.forEach(fault => {
+                    const state = status[fault.key];
+                    const card = document.createElement('div');
+                    card.className = 'fault-card';
+                    card.innerHTML = `
+                        <div class="fault-header">
+                            <div class="fault-title">${fault.title}</div>
+                            <div class="status ${state.enabled ? 'enabled' : 'disabled'}">
+                                ${state.enabled ? 'ACTIVE' : 'INACTIVE'}
+                            </div>
+                        </div>
+                        <div class="description">${fault.description}</div>
+                        <div class="controls">
+                            <button class="btn-enable" onclick="enableFault('${fault.key}')">Enable</button>
+                            <button class="btn-disable" onclick="disableFault('${fault.key}')">Disable</button>
+                            <input type="range" id="intensity-${fault.key}" 
+                                   min="1" max="100" value="${state.intensity}" 
+                                   oninput="document.getElementById('value-${fault.key}').innerText = this.value">
+                            <span class="intensity-label" id="value-${fault.key}">${state.intensity} ${fault.intensityLabel}</span>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            }
+
+            // Initial load
+            refreshStatus();
+            
+            // Auto-refresh every 5 seconds
+            setInterval(refreshStatus, 5000);
+        </script>
+    </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content)
+
+@app.get("/admin/chaos/status", tags=["Chaos Engineering"])
+async def get_chaos_status():
+    """Get current status of all chaos faults"""
+    return chaos_state
+
+@app.post("/admin/chaos/{fault_type}/enable", tags=["Chaos Engineering"])
+async def enable_chaos_fault(fault_type: str, config: ChaosConfig):
+    """Enable a specific chaos fault"""
+    if fault_type not in chaos_state:
+        raise HTTPException(status_code=404, detail=f"Fault type '{fault_type}' not found")
+    
+    chaos_state[fault_type]["enabled"] = True
+    if config.intensity is not None:
+        chaos_state[fault_type]["intensity"] = config.intensity
+    
+    # Special handling for CPU spike - start background thread
+    if fault_type == "cpu_spike" and chaos_state["cpu_spike"]["thread"] is None:
+        thread = threading.Thread(target=cpu_burn_thread, daemon=True)
+        thread.start()
+        chaos_state["cpu_spike"]["thread"] = thread
+    
+    logger.warning(f"CHAOS ENABLED: {fault_type} with intensity {chaos_state[fault_type]['intensity']}")
+    return {"status": "enabled", "fault": fault_type, "config": chaos_state[fault_type]}
+
+@app.post("/admin/chaos/{fault_type}/disable", tags=["Chaos Engineering"])
+async def disable_chaos_fault(fault_type: str, config: ChaosConfig):
+    """Disable a specific chaos fault"""
+    if fault_type not in chaos_state:
+        raise HTTPException(status_code=404, detail=f"Fault type '{fault_type}' not found")
+    
+    chaos_state[fault_type]["enabled"] = False
+    
+    # Special handling for different fault types
+    if fault_type == "memory_leak":
+        # Clear leaked memory
+        chaos_state["memory_leak"]["leak_data"].clear()
+        gc.collect()
+        logger.info("CHAOS: Cleared leaked memory and ran garbage collection")
+    
+    elif fault_type == "connection_leak":
+        # Close all leaked connections
+        for conn in chaos_state["connection_leak"]["leaked_connections"]:
+            try:
+                conn.close()
+            except:
+                pass
+        chaos_state["connection_leak"]["leaked_connections"].clear()
+        logger.info("CHAOS: Closed all leaked database connections")
+    
+    logger.info(f"CHAOS DISABLED: {fault_type}")
+    return {"status": "disabled", "fault": fault_type}
+
+@app.post("/admin/chaos/disable-all", tags=["Chaos Engineering"])
+async def disable_all_chaos():
+    """Disable all chaos faults at once"""
+    for fault_type in chaos_state.keys():
+        await disable_chaos_fault(fault_type, ChaosConfig(enabled=False))
+    return {"status": "all faults disabled"}
+
 # Health check endpoints
 @app.get("/health", tags=["Health"])
 async def health_check():
@@ -159,12 +552,13 @@ async def root():
         "version": "1.0.0",
         "endpoints": {
             "health": "/health",
-            "items": "/items",
-            "docs": "/docs"
+            "items": "/api/items",
+            "docs": "/docs",
+            "chaos_dashboard": "/admin/chaos"
         }
     }
 
-@app.get("/items", response_model=List[ItemResponse], tags=["Items"])
+@app.get("/api/items", response_model=List[ItemResponse], tags=["Items"])
 async def list_items(skip: int = 0, limit: int = 100):
     """List all items with pagination"""
     apply_slow_mode()  # Apply artificial delay if SLOW_MODE is enabled
@@ -187,7 +581,7 @@ async def list_items(skip: int = 0, limit: int = 100):
         logger.error(f"Error listing items: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/items/{item_id}", response_model=ItemResponse, tags=["Items"])
+@app.get("/api/items/{item_id}", response_model=ItemResponse, tags=["Items"])
 async def get_item(item_id: int):
     """Get a specific item by ID"""
     apply_slow_mode()  # Apply artificial delay if SLOW_MODE is enabled
@@ -212,7 +606,7 @@ async def get_item(item_id: int):
         logger.error(f"Error getting item {item_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/items", response_model=ItemResponse, status_code=201, tags=["Items"])
+@app.post("/api/items", response_model=ItemResponse, status_code=201, tags=["Items"])
 async def create_item(item: Item):
     """Create a new item"""
     try:
@@ -239,7 +633,7 @@ async def create_item(item: Item):
         logger.error(f"Error creating item: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.put("/items/{item_id}", response_model=ItemResponse, tags=["Items"])
+@app.put("/api/items/{item_id}", response_model=ItemResponse, tags=["Items"])
 async def update_item(item_id: int, item: Item):
     """Update an existing item"""
     try:
@@ -274,7 +668,7 @@ async def update_item(item_id: int, item: Item):
         logger.error(f"Error updating item {item_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.delete("/items/{item_id}", status_code=204, tags=["Items"])
+@app.delete("/api/items/{item_id}", status_code=204, tags=["Items"])
 async def delete_item(item_id: int):
     """Delete an item"""
     try:
