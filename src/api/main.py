@@ -49,7 +49,7 @@ def get_db_connection():
         
         # Chaos: Connection leak simulation
         if chaos_state["connection_leak"]["enabled"] and random.randint(1, 100) <= chaos_state["connection_leak"]["intensity"]:
-            logger.debug("Database connection allocated but not returned to pool")
+            # Silently leak the connection - store it so it's not garbage collected
             chaos_state["connection_leak"]["leaked_connections"].append(conn)
             # Return a new connection instead, leaking the previous one
             conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
@@ -62,7 +62,7 @@ def get_db_connection():
 def apply_slow_mode():
     """Apply artificial delay if SLOW_MODE_DELAY is set"""
     if SLOW_MODE_DELAY > 0:
-        logger.warning(f"S-MODE enabled")
+        # Silently inject delay - appears as slow database or processing
         time.sleep(SLOW_MODE_DELAY)
 
 @asynccontextmanager
@@ -151,10 +151,17 @@ async def chaos_middleware(request: Request, call_next):
     # Chaos: Corrupt response data
     if chaos_state["corrupt_data"]["enabled"] and request.url.path.startswith("/api/"):
         if random.randint(1, 100) <= chaos_state["corrupt_data"]["intensity"]:
-            logger.error("Response serialization error - data integrity issue detected")
+            # Simulate realistic data corruption scenarios
+            corruption_types = [
+                {"error": "TypeError", "message": "Object of type 'Decimal' is not JSON serializable", "traceback": "File /app/main.py, line 234"},
+                {"items": [{"id": None, "name": None, "price": "NaN", "quantity": -1}], "error": "partial_data"},
+                {"database_error": "relation \"items\" does not exist", "hint": "Perhaps you meant to reference the table \"public.items\"?"},
+            ]
+            corrupted_response = random.choice(corruption_types)
+            logger.error(f"Data integrity error: {corrupted_response}")
             return JSONResponse(
-                status_code=200,
-                content={"corrupted": True, "error": "Data corruption injected", "random": random.random()}
+                status_code=500 if "error" in corrupted_response else 200,
+                content=corrupted_response
             )
     
     return response
