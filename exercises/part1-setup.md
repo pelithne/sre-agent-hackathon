@@ -164,8 +164,8 @@ Now deploy the Container Apps with the built image. This deployment is using the
 ACR_LOGIN_SERVER=$(az acr show --name $ACR_NAME --query loginServer -o tsv)
 
 # Persist the variable
-set_var "ACR_LOGIN_SERVER" "$ACR_LOGIN_SERVER"
-echo "ACR Login Server: $ACR_LOGIN_SERVER"
+set_var "ACR_NAME" "$ACR_LOGIN_SERVER"
+echo "ACR Name: $ACR_LOGIN_SERVER"
 
 
 # Deploy Container Apps and APIM
