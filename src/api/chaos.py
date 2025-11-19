@@ -35,7 +35,7 @@ class ChaosConfig(BaseModel):
 # Background thread functions
 def cpu_burn_thread():
     """Background thread that burns CPU cycles"""
-    logger.debug("Background processing thread started")
+    logger.info("Worker thread initialized for async task processing")
     while chaos_state["cpu_spike"]["enabled"]:
         # Burn CPU based on intensity (0-100)
         intensity = chaos_state["cpu_spike"]["intensity"]
@@ -48,7 +48,7 @@ def cpu_burn_thread():
         
         if sleep_duration > 0:
             time.sleep(sleep_duration)
-    logger.debug("Background processing thread stopped")
+    logger.info("Worker thread terminated")
 
 def memory_leak_thread():
     """Background thread that gradually leaks memory over time"""
@@ -56,7 +56,7 @@ def memory_leak_thread():
         import psutil
         import os
         
-        logger.debug("Memory allocation")
+        logger.info("Initializing request cache manager")
         
         # Get target duration in seconds
         target_minutes = chaos_state["memory_leak"]["intensity"]
@@ -72,7 +72,7 @@ def memory_leak_thread():
             # Fallback to system total memory if cgroup file doesn't exist
             container_memory_limit = psutil.virtual_memory().total
         
-        logger.info(f"Container memory limit: {container_memory_limit / (1024**3):.2f} GB")
+        logger.debug(f"Container memory limit detected: {container_memory_limit / (1024**3):.2f} GB")
         
         # Target: 95% of container memory
         target_memory_bytes = int(container_memory_limit * 0.95)
@@ -87,9 +87,7 @@ def memory_leak_thread():
         # Calculate sleep interval between allocations
         sleep_interval = target_seconds / total_allocations_needed if total_allocations_needed > 0 else 1
         
-        logger.info(f"Target memory: {target_memory_bytes / (1024**3):.2f} GB")
-        logger.info(f"Allocations needed: {total_allocations_needed}")
-        logger.info(f"Sleep interval: {sleep_interval:.2f} seconds")
+        logger.debug(f"Cache target size: {target_memory_bytes / (1024**3):.2f} GB")
         
         process = psutil.Process(os.getpid())
         start_time = time.time()
@@ -99,7 +97,7 @@ def memory_leak_thread():
             
             if current_memory >= target_memory_bytes:
                 # Hold at 95% until disabled
-                logger.debug(f"Maintaining memory at {current_memory / (1024**3):.2f} GB (95% of limit)")
+                logger.debug(f"Cache size stable at {current_memory / (1024**3):.2f} GB")
                 time.sleep(10)  # Check every 10 seconds
                 continue
             
@@ -114,14 +112,14 @@ def memory_leak_thread():
             current_memory = process.memory_info().rss
             progress = (current_memory / target_memory_bytes) * 100
             
-            logger.info(f"Memory: {current_memory / (1024**3):.2f} GB ({progress:.1f}% of target) - {elapsed:.0f}s elapsed")
+            logger.debug(f"Cache size: {current_memory / (1024**3):.2f} GB ({progress:.1f}% capacity)")
             
             # Sleep before next allocation
             if chaos_state["memory_leak"]["enabled"]:
                 time.sleep(sleep_interval)
         
     except Exception as e:
-        logger.error(f"Memory leak thread error: {str(e)}")
+        logger.error(f"Cache manager error: {str(e)}")
 
 # Middleware helper function
 def apply_chaos_middleware():
@@ -129,13 +127,23 @@ def apply_chaos_middleware():
     # Chaos: Random errors
     if chaos_state["random_errors"]["enabled"]:
         if random.randint(1, 100) <= chaos_state["random_errors"]["intensity"]:
-            logger.error("Request processing failed: Unexpected internal error")
-            raise HTTPException(status_code=500, detail="Internal server error")
+            # Simulate realistic production errors
+            error_types = [
+                ("Database connection pool exhausted - max pool size reached", 503),
+                ("Database query timeout after 30s - please retry", 504),
+                ("Serialization error: Object of type 'datetime' is not JSON serializable", 500),
+                ("psycopg2.OperationalError: server closed the connection unexpectedly", 503),
+                ("Connection to database lost - unable to acquire connection from pool", 503),
+                ("SSL SYSCALL error: EOF detected", 500),
+            ]
+            error_msg, status_code = random.choice(error_types)
+            logger.error(f"Request failed: {error_msg}")
+            raise HTTPException(status_code=status_code, detail=error_msg)
     
     # Chaos: Slow responses
     if chaos_state["slow_responses"]["enabled"]:
         delay = chaos_state["slow_responses"]["intensity"]
-        logger.debug(f"Request processing delay: {delay}s")
+        # Silently inject delay - no obvious logging
         time.sleep(delay)
 
 # Create API router
