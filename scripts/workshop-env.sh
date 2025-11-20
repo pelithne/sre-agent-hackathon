@@ -75,7 +75,7 @@ clear_vars() {
 
 # Function to verify required variables are set
 verify_vars() {
-    local required_vars=("BASE_NAME" "RESOURCE_GROUP" "APIM_GATEWAY_URL" "SUBSCRIPTION_KEY")
+    local required_vars=("BASE_NAME" "RESOURCE_GROUP" "APIM_GATEWAY_URL" "SUBSCRIPTION_KEY" "CONTAINER_APP_ID")
     local missing_vars=()
     local invalid_vars=()
     
