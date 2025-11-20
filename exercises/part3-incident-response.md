@@ -2,7 +2,7 @@
 
 ## Overview
 
-In this exercise, you'll learn to set up proactive monitoring and alerting for your Azure infrastructure. You'll configure Azure Monitor alerts, create dashboards, and use Azure SRE Agent to investigate incidents and create Root Cause Analysis (RCA) reports.
+In this exercise, you'll learn to set up proactive monitoring and alerting for your Azure infrastructure. You'll configure Azure Monitor alerts, create dashboards, and use Azure SRE Agent to investigate incidents and create Root Cause Analysis (RCA) reports (TODO!).
 
 **Estimated Time:** 60-90 minutes
 
