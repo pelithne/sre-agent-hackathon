@@ -254,15 +254,12 @@ Before introducing any faults, start a 15-minute load test to establish baseline
 
 ```bash
 # Start load test (runs in background for 15 minutes)
-./scripts/load-test-apim.sh --duration 900 --rps 10 &
-
-# Save the process ID
-LOAD_TEST_PID=$!
+./scripts/load-test-apim.sh --duration 900
 ```
 
-> **Note**: The load test generates a realistic traffic mix (POST 40%, GET list 30%, GET item 20%, DELETE 10%) at 10 requests/second. This creates the log entries and metrics that SRE Agent will analyze.
+> **Note**: The load test generates a traffic mix (POST 40%, GET list 30%, GET item 20%, DELETE 10%) at around 10 requests/second. 
 
-### Step 2: Enable Multiple Chaos Faults
+### Step 2: Enable Multiple Faults
 
 After the load test has been running for 1-2 minutes, introduce the faults:
 
@@ -348,14 +345,8 @@ Given these combined symptoms (30% error rate and 20% data corruption),
 what immediate mitigation steps should I take while investigating the root cause?
 ```
 
-**Expected guidance:**
-- Consider scaling up database resources
-- Implement circuit breakers to prevent cascading failures
-- Add retry logic with exponential backoff
-- Temporarily increase connection pool size
-- Review recent code changes related to database queries or serialization
 
-### Step 6: Disable Chaos Faults
+### Step 6: Disable Faults
 
 After completing your investigation:
 
@@ -363,22 +354,6 @@ After completing your investigation:
 2. **Disable Random Errors**: Click **Disable** on the Random Errors card
 3. **Disable Corrupt Data**: Click **Disable** on the Corrupt Data card
 
-### Step 7: Stop Load Test and Verify Recovery
-
-```bash
-# Stop the load test if still running
-if ps -p $LOAD_TEST_PID > /dev/null 2>&1; then
-  kill $LOAD_TEST_PID
-  echo "Load test stopped"
-fi
-
-# Verify API is healthy
-for i in {1..5}; do
-  echo "Request $i:"
-  curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
-    "$APIM_GATEWAY_URL/api/items" | jq 'if type=="array" then "✓ Success" else .message end'
-done
-```
 
 All requests should now succeed with valid responses.
 
@@ -390,125 +365,6 @@ Ask SRE Agent about resilience:
 Now that I've resolved these chaos faults, what monitoring and alerting 
 should I set up to detect similar combined failure scenarios in production?
 ```
-
-### Key Learnings
-
-- **Real incidents often have multiple symptoms**: Production failures rarely present as single, isolated issues
-- **Correlation is critical**: Understanding relationships between symptoms helps identify root causes
-- **Load testing reveals failures**: Chaos faults need realistic traffic to generate observable patterns
-- **SRE Agent helps prioritize**: With multiple issues, knowing what to investigate first saves time
-- **Error patterns matter**: 30% failure rate suggests systematic issues, not random hardware faults
-- **Data integrity vs. availability**: Different severity levels require different response priorities
-- **Cascading failures are common**: Database overload can cause both connection errors and serialization issues
-- **Mitigation while investigating**: You don't need root cause to implement temporary fixes
-- **SRE Agent provides production context**: Even with simulated chaos, guidance applies to real scenarios
-
-### Troubleshooting Pattern Applied
-
-**Multi-Symptom Investigation Workflow**:
-1. **Gather symptoms from multiple sources** (user reports, logs, metrics)
-2. **Describe all symptoms to SRE Agent** (don't focus on just one)
-3. **Look for correlation patterns** (timing, frequency, error types)
-4. **Identify common elements** (database appears in both error types)
-5. **Prioritize by impact** (availability issues before data quality)
-6. **Implement mitigation** (stop the bleeding)
-7. **Root cause analysis** (determine underlying issue)
-8. **Verify resolution** (confirm all symptoms resolved)
-9. **Prevent recurrence** (monitoring, alerting, architecture changes)
-
----
-
-## Best Practices for Using SRE Agent with Chaos Engineering
-
-### 1. Describe Symptoms, Not Solutions
-
-**Good:**
-```
-My API returns 500 errors about 30% of the time. Additionally, about 20% of successful 
-responses contain corrupted data with unexpected fields.
-Container App: <your-base-name>-dev-api in resource group <your-base-name>-workshop
-```
-
-**Less Effective:**
-```
-I think there's a chaos fault enabled
-```
-
-### 2. Provide Context and Timing
-
-```
-These issues started approximately 5 minutes ago. Before that, the API was 
-functioning normally. I've been running load tests for the past 10 minutes.
-```
-
-### 3. Share Relevant Log Excerpts
-
-```
-The logs show:
-- "Request failed: Database connection pool exhausted" (ERROR level)
-- "Data integrity error: Object of type 'Decimal' is not JSON serializable" (ERROR level)
-What patterns do these indicate?
-```
-
-### 4. Ask About Production Equivalents
-
-```
-I'm seeing these symptoms in my testing environment with chaos engineering. 
-In production, what are common root causes of:
-- Intermittent 500 errors with database connection messages
-- JSON serialization errors in API responses
-- Combined database and data integrity issues
-```
-
-### 5. Request Specific Guidance
-
-```
-Given a 30% error rate, should I focus on database connection pool settings 
-or investigate recent code changes first?
-```
-
-### 6. Learn About Prevention
-
-```
-What monitoring should I set up to detect database connection pool exhaustion 
-before it impacts users?
-```
-
----
-
-## Summary Checklist
-
-After completing Part 2, you should be able to:
-
-- [ ] Create and configure an Azure SRE Agent
-- [ ] Use the Chaos Engineering Dashboard to simulate failures
-- [ ] Describe symptoms clearly to Azure SRE Agent using natural language
-- [ ] Investigate CPU performance issues using metrics and SRE Agent guidance
-- [ ] Diagnose complex multi-symptom scenarios (combined errors and data corruption)
-- [ ] Run load tests to generate realistic traffic patterns for investigation
-- [ ] Correlate multiple error types to identify potential common causes
-- [ ] Prioritize issues by impact (availability vs. data integrity)
-- [ ] Ask effective follow-up questions to deepen investigation
-- [ ] Apply incident response workflows with AI assistance
-
----
-
-## What's Next?
-
-You've learned how to leverage Azure SRE Agent for troubleshooting both simple and complex issues. The combination of chaos engineering and AI-assisted diagnostics provides a powerful approach to:
-
-- **Practice incident response** in a safe, controlled environment
-- **Build troubleshooting muscle memory** with realistic scenarios  
-- **Learn Azure diagnostic tools** through guided AI interaction
-- **Develop investigation patterns** that apply to production incidents
-
-Consider exploring:
-- Setting up monitoring and alerts to detect issues proactively
-- Implementing circuit breakers and retry logic for resilience
-- Automating chaos testing in CI/CD pipelines
-- Creating runbooks based on SRE Agent guidance
-
----
 
 ## Additional Resources
 
