@@ -45,7 +45,7 @@ var postgresServerName = '${namingConfig.namingPrefix}-psql-${namingConfig.uniqu
 // ============================================================================
 
 // PostgreSQL Flexible Server
-resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2023-12-01-preview' = {
+resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01' = {
   name: postgresServerName
   location: location
   tags: tags
@@ -59,7 +59,6 @@ resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2023-12-01-pr
     version: '16'
     storage: {
       storageSizeGB: databaseConfig.storageSizeGB
-      autoGrow: 'Enabled'
     }
     backup: {
       backupRetentionDays: databaseConfig.backupRetentionDays
@@ -80,7 +79,7 @@ resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2023-12-01-pr
 }
 
 // PostgreSQL Database
-resource postgresDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2023-12-01-preview' = {
+resource postgresDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2022-12-01' = {
   parent: postgresServer
   name: databaseConfig.databaseName
   properties: {
@@ -90,7 +89,7 @@ resource postgresDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2
 }
 
 // PostgreSQL Firewall Rule to allow Azure services
-resource postgresFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2023-12-01-preview' = {
+resource postgresFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2022-12-01' = {
   parent: postgresServer
   name: 'AllowAllAzureServicesAndResourcesWithinAzureIps'
   properties: {
