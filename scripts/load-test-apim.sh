@@ -8,7 +8,7 @@ set -e
 
 # Parse command line arguments
 VERBOSE=false
-DURATION=300  # Default 5 minutes
+DURATION=900  # Default 15 minutes (safe for Cloud Shell)
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -24,9 +24,19 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# Use APIM_GATEWAY_URL if available, otherwise fall back to APIM_URL
+if [ -z "$APIM_URL" ]; then
+    APIM_URL="${APIM_GATEWAY_URL}"
+fi
+
+# Use SUBSCRIPTION_KEY if available, otherwise fall back to APIM_KEY
+if [ -z "$APIM_KEY" ]; then
+    APIM_KEY="${SUBSCRIPTION_KEY}"
+fi
+
 # Configuration
-RPS=${RPS:-10}             # Requests per second
-WORKERS=${WORKERS:-5}      # Number of concurrent workers
+RPS=${RPS:-3}              # Requests per second (workshop-appropriate load)
+WORKERS=${WORKERS:-2}      # Number of concurrent workers
 
 # Colors for output
 RED='\033[0;31m'
@@ -49,7 +59,7 @@ print_error() {
 
 # Check if APIM URL and Key are provided
 if [ -z "$APIM_URL" ]; then
-    print_error "APIM_URL environment variable is required"
+    print_error "APIM_GATEWAY_URL or APIM_URL environment variable is required"
     echo ""
     echo "Usage: ./load-test-apim.sh [OPTIONS] [DURATION_IN_SECONDS]"
     echo ""
@@ -57,20 +67,24 @@ if [ -z "$APIM_URL" ]; then
     echo "  -v, --verbose    Show detailed output for each request type"
     echo ""
     echo "Environment variables:"
-    echo "  APIM_URL  - APIM gateway URL (required)"
-    echo "  APIM_KEY  - APIM subscription key (required)"
-    echo "  RPS       - Requests per second (default: 10)"
-    echo "  WORKERS   - Number of concurrent workers (default: 5)"
+    echo "  APIM_GATEWAY_URL - APIM gateway URL (required, from workshop-env.sh)"
+    echo "  APIM_URL         - Alternative to APIM_GATEWAY_URL"
+    echo "  SUBSCRIPTION_KEY - APIM subscription key (required, from workshop-env.sh)"
+    echo "  APIM_KEY         - Alternative to SUBSCRIPTION_KEY"
+    echo "  RPS              - Requests per second (default: 3)"
+    echo "  WORKERS          - Number of concurrent workers (default: 2)"
     echo ""
     echo "Examples:"
-    echo "  ./load-test-apim.sh 600                    # Run for 10 minutes"
-    echo "  ./load-test-apim.sh --verbose 300          # Run for 5 minutes with verbose output"
-    echo "  RPS=30 ./load-test-apim.sh 120             # Run for 2 minutes with 30 RPS"
+    echo "  source scripts/workshop-env.sh              # Load workshop variables"
+    echo "  ./load-test-apim.sh                         # Run with defaults (15 min)"
+    echo "  ./load-test-apim.sh 60                      # Run for 1 minute (quick test)"
+    echo "  ./load-test-apim.sh --verbose 300           # Run for 5 minutes with verbose output"
+    echo "  RPS=10 ./load-test-apim.sh 900              # Run for 15 minutes with 10 RPS"
     exit 1
 fi
 
 if [ -z "$APIM_KEY" ]; then
-    print_error "APIM_KEY environment variable is required"
+    print_error "SUBSCRIPTION_KEY or APIM_KEY environment variable is required"
     echo ""
     echo "Usage: ./load-test-apim.sh [OPTIONS] [DURATION_IN_SECONDS]"
     echo ""
@@ -78,24 +92,33 @@ if [ -z "$APIM_KEY" ]; then
     echo "  -v, --verbose    Show detailed output for each request type"
     echo ""
     echo "Environment variables:"
-    echo "  APIM_URL  - APIM gateway URL (required)"
-    echo "  APIM_KEY  - APIM subscription key (required)"
-    echo "  RPS       - Requests per second (default: 10)"
-    echo "  WORKERS   - Number of concurrent workers (default: 5)"
+    echo "  APIM_GATEWAY_URL - APIM gateway URL (required, from workshop-env.sh)"
+    echo "  APIM_URL         - Alternative to APIM_GATEWAY_URL"
+    echo "  SUBSCRIPTION_KEY - APIM subscription key (required, from workshop-env.sh)"
+    echo "  APIM_KEY         - Alternative to SUBSCRIPTION_KEY"
+    echo "  RPS              - Requests per second (default: 3)"
+    echo "  WORKERS          - Number of concurrent workers (default: 2)"
     echo ""
     echo "Examples:"
-    echo "  ./load-test-apim.sh 600                    # Run for 10 minutes"
-    echo "  ./load-test-apim.sh --verbose 300          # Run for 5 minutes with verbose output"
-    echo "  RPS=30 ./load-test-apim.sh 120             # Run for 2 minutes with 30 RPS"
+    echo "  source scripts/workshop-env.sh              # Load workshop variables"
+    echo "  ./load-test-apim.sh                         # Run with defaults (15 min)"
+    echo "  ./load-test-apim.sh 60                      # Run for 1 minute (quick test)"
+    echo "  ./load-test-apim.sh --verbose 300           # Run for 5 minutes with verbose output"
+    echo "  RPS=10 ./load-test-apim.sh 900              # Run for 15 minutes with 10 RPS"
     exit 1
 fi
 
 # Remove trailing slash from APIM_URL if present
 APIM_URL=${APIM_URL%/}
 
+# Append /api path if not already present (workshop URLs point to gateway, not /api endpoint)
+if [[ ! "$APIM_URL" =~ /api$ ]]; then
+    APIM_URL="${APIM_URL}/api"
+fi
+
 print_info "Load Test Configuration:"
 echo "  APIM URL: $APIM_URL"
-echo "  Duration: ${DURATION}s"
+echo "  Duration: ${DURATION}s (~$((DURATION / 60)) minutes)"
 echo "  Target RPS: $RPS"
 echo "  Workers: $WORKERS"
 echo ""

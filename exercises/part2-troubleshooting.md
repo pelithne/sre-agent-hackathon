@@ -91,7 +91,58 @@ Once deployment completes:
 
 Test it with: `What can you help me with?`
 
-### Step 4: Access the Chaos Dashboard
+### Step 4: Generate Realistic Load
+
+Before starting the chaos exercises, you should generate realistic traffic to the API. This helps make the failures more visible and provides meaningful metrics for investigation.
+
+#### Install the Load Testing Tool
+
+First, install the `hey` HTTP load generator:
+
+```bash
+# Download hey
+wget https://hey-release.s3.us-east-2.amazonaws.com/hey_linux_amd64
+
+# Make it executable
+chmod +x hey_linux_amd64
+
+# Move to ~/bin directory
+mkdir -p ~/bin
+mv hey_linux_amd64 ~/bin/hey
+
+# Add to PATH (run this in your current shell)
+export PATH=$PATH:~/bin
+```
+
+> **Note:** You only need to install `hey` once. After installation, it will be available in all future terminal sessions.
+
+#### Understanding the Load Test Script
+
+The load test script simulates realistic API traffic and should be started **at the beginning of each exercise** (you'll see specific instructions in each exercise below).
+
+When you run the script, it will:
+- Generate **3 requests/second** (workshop-appropriate load)
+- Distribute traffic realistically: 40% POST, 30% GET list, 20% GET item, 10% DELETE
+- Run for **15 minutes** by default (safe for Cloud Shell)
+- Display summary statistics when complete
+
+**Example usage (you'll run this in each exercise):**
+```bash
+# Start a 15-minute load test (default)
+./scripts/load-test-apim.sh
+```
+
+**Optional:** For a quick test (1 minute):
+```bash
+./scripts/load-test-apim.sh 60
+```
+
+**Optional:** To see detailed output:
+```bash
+./scripts/load-test-apim.sh --verbose
+```
+
+### Step 5: Access the Chaos Dashboard
 
 Open the Chaos Engineering Dashboard to simulate failures:
 
@@ -117,7 +168,7 @@ Open this URL in your browser. You'll see the 🔥 Chaos Engineering Dashboard w
 
 ---
 
-## Exercise 1: Memory Leak Detectiontion
+## Exercise 1: Memory Leak Detection
 
 ### Scenario
 
@@ -127,14 +178,25 @@ The Container App is consuming increasing amounts of memory and eventually crash
 
 Simulate a memory leak and use SRE Agent to diagnose the issue.
 
-### Step 1: Enable Memory Leak
+### Step 1: Start traffic
+
+First, start generating realistic traffic to the API:
+
+```bash
+# Start 15-minute load test
+./scripts/load-test-apim.sh
+```
+
+The load test will run in the foreground. Once you see the "Starting realistic traffic simulation" messages, it will start generating traffic towards your API endpoints. 
+
+### Step 2: Enable Memory Leak
 
 1. Open the Chaos Engineering Dashboard
 2. Find the **Memory Leak** card
 3. Set the intensity slider to **10** minutes (memory will leak to 95% over 10 minutes)
 4. Click **Enable**
 
-### Step 2: Monitor Memory Consumption
+### Step 3: Monitor Memory Consumption
 
 Watch the memory grow over time. Ask SRE Agent to help you monitor:
 
@@ -156,8 +218,9 @@ resource group <your-base-name>-workshop.
 ```
 
 The SRE Agent may find log messages like:
-- "Memory allocated: 500 MB / 972 MB (51%)"
-- "Allocating memory buffer: targeting X GB over Y minutes"
+- "Initializing request cache manager" (at INFO level when enabled)
+- "Cache size: X.XX GB (XX.X% capacity)" (at DEBUG level during leak)
+- "Container memory limit detected: X.XX GB" (at DEBUG level)
 
 Follow up with:
 
@@ -178,7 +241,7 @@ The SRE Agent will provide guidance on:
 1. Return to the Chaos Engineering Dashboard
 2. Find the **Memory Leak** card
 3. Click **Disable**
-4. Observe the memory being released (logs will show "Releasing allocated memory buffers")
+4. Observe the memory being released (logs will show "Memory buffers released and garbage collection completed")
 
 ### Step 5: Verify Memory Returns to Normal
 
@@ -209,7 +272,16 @@ The API is experiencing high CPU usage, causing slow responses and potential thr
 
 Simulate CPU pressure and diagnose with SRE Agent.
 
-### Step 1: Enable CPU Spike
+### Step 1: Start Load Test
+
+Start a new load test for this exercise:
+
+```bash
+# In a new terminal or after previous load test completes
+./scripts/load-test-apim.sh
+```
+
+### Step 2: Enable CPU Spike
 
 1. Open the Chaos Engineering Dashboard
 2. Find the **CPU Spike** card
@@ -243,7 +315,7 @@ errors at INFO level. What are common causes of high CPU in production and how
 would I troubleshoot them?
 ```
 
-> Note: The chaos fault logs at DEBUG level ("Background processing thread started"), so they won't appear in standard log queries. This simulates a real-world scenario where CPU issues might not have obvious log indicators.
+> Note: The chaos fault logs minimally ("Worker thread initialized for async task processing" at INFO level when enabled, "Worker thread terminated" when disabled). This simulates a real-world scenario where CPU issues might not have obvious log indicators - the CPU spike itself is silent.
 
 The SRE Agent will provide insights on:
 - Inefficient algorithms or code
@@ -289,14 +361,22 @@ Users report that the API is extremely slow, with response times of 5-10 seconds
 
 Use the Chaos Dashboard to simulate slow responses, then diagnose with SRE Agent.
 
-### Step 1: Enable Slow Responses
+### Step 1: Start Load Test
+
+Start a new load test for this exercise:
+
+```bash
+./scripts/load-test-apim.sh
+```
+
+### Step 2: Enable Slow Responses
 
 1. Open the Chaos Engineering Dashboard
 2. Find the **Slow Responses** card
 3. Set the intensity slider to **5** seconds
 4. Click **Enable**
 
-### Step 2: Measure Current Performance
+### Step 3: Measure Current Performance
 
 Test the response time - it should be very slow:
 
@@ -331,7 +411,7 @@ I'm seeing consistent 5+ second response times. The application logs at INFO lev
 don't show obvious delays. What could cause systematic slowness like this?
 ```
 
-> Note: The chaos fault logs at DEBUG level ("Processing request: 5s"), simulating scenarios where slow operations might not be immediately obvious in logs.
+> Note: The chaos fault silently injects delay with no logging at all, simulating scenarios where slow operations (like slow database queries or external API calls) might not be immediately obvious in application logs. The only evidence is the measured response time.
 
 ### Step 4: Disable the Slow Response Fault
 
@@ -383,7 +463,15 @@ Users are reporting intermittent 500 Internal Server Error responses from the AP
 
 Use the Chaos Dashboard to simulate random errors, then investigate with SRE Agent.
 
-### Step 1: Enable Random Errors
+### Step 1: Start Load Test
+
+Start a new load test for this exercise:
+
+```bash
+./scripts/load-test-apim.sh
+```
+
+### Step 2: Enable Random Errors
 
 1. Open the Chaos Engineering Dashboard in your browser
 2. Find the **Random Errors** card
@@ -391,7 +479,7 @@ Use the Chaos Dashboard to simulate random errors, then investigate with SRE Age
 4. Click **Enable**
 5. Observe the status change to **ACTIVE**
 
-### Step 2: Reproduce the Issue
+### Step 3: Reproduce the Issue
 
 Test the API multiple times - you should see intermittent failures:
 
@@ -407,9 +495,10 @@ done
 ```
 
 You should see a mix of successful responses and error messages like:
-- "Internal server error"
-- "Service temporarily unavailable"
-- "Database connection timeout"
+- "Database connection pool exhausted - max pool size reached"
+- "Database query timeout after 30s - please retry"
+- "psycopg2.OperationalError: server closed the connection unexpectedly"
+- "Connection to database lost - unable to acquire connection from pool"
 
 ### Step 3: Investigate with SRE Agent
 
@@ -505,14 +594,22 @@ Users report receiving corrupted or invalid JSON responses from the API intermit
 
 Simulate data corruption and investigate.
 
-### Step 1: Enable Data Corruption
+### Step 1: Start Load Test
+
+Start a new load test for this exercise:
+
+```bash
+./scripts/load-test-apim.sh
+```
+
+### Step 2: Enable Data Corruption
 
 1. Open the Chaos Engineering Dashboard
 2. Find the **Corrupt Data** card
 3. Set the intensity slider to **30%** (30% of responses will be corrupted)
 4. Click **Enable**
 
-### Step 2: Observe Corrupted Responses
+### Step 3: Observe Corrupted Responses
 
 Test the API multiple times:
 
@@ -542,12 +639,12 @@ Some responses are valid, others contain unexpected fields like "corrupted": tru
 How should I investigate this data integrity issue?
 ```
 
-**After reviewing logs:**
+**After examining the responses:**
 
 ```
-The logs show "Response serialization error - data integrity issue detected" messages.
-Some responses contain unexpected "corrupted": true fields.
-What could cause data corruption or serialization errors in production?
+I'm seeing intermittent responses with unexpected fields: "corrupted": true, "error": "Data corruption injected".
+About 30% of responses are affected. The application logs don't show serialization errors.
+What could cause data corruption in API responses when there are no obvious application errors?
 ```
 
 The agent will discuss:
@@ -596,16 +693,24 @@ After sustained load, the API starts failing with database connection errors.
 
 Simulate connection leaks and diagnose with SRE Agent.
 
-### Step 1: Enable Connection Leak
+### Step 1: Start Load Test
+
+Start a new load test for this exercise:
+
+```bash
+./scripts/load-test-apim.sh
+```
+
+### Step 2: Enable Connection Leak
 
 1. Open the Chaos Engineering Dashboard
 2. Find the **Connection Leak** card
 3. Set the intensity slider to **50%** (50% of database requests leak connections)
 4. Click **Enable**
 
-### Step 2: Generate Load
+### Step 3: Generate Additional Load
 
-Make several requests to exhaust the connection pool:
+While the load test runs, make several additional requests to exhaust the connection pool faster:
 
 ```bash
 # Generate sustained requests
@@ -616,7 +721,7 @@ done
 wait
 ```
 
-### Step 3: Observe Connection Errors
+### Step 4: Observe Connection Errors
 
 After generating load, you may see connection errors. Ask SRE Agent:
 
@@ -630,7 +735,7 @@ The agent will guide you through:
 - Reviewing database connection limits
 - Understanding proper connection management
 
-> Note: Connection leak logs appear at DEBUG level ("Database connection allocated but not returned to pool"), simulating real scenarios where connection leaks aren't always explicitly logged.
+> Note: Connection leaks happen silently without explicit logging (simulating real scenarios where leaked connections aren't always logged). When you disable the fault, you'll see "Database connection cleanup completed" confirming the cleanup.
 
 ### Step 4: Disable Connection Leak
 
@@ -685,12 +790,15 @@ What patterns do these indicate?
 
 ### 3. Understand Logging Levels
 
-Some issues log at DEBUG level and won't appear in standard queries:
-- High CPU from background threads
-- Slow request processing delays  
-- Connection leak tracking
+Some chaos faults have minimal or no logging:
+- **Memory leak**: INFO level when started ("Initializing request cache manager"), DEBUG level during operation
+- **CPU spike**: INFO level thread start/stop messages, but the actual CPU burn is silent
+- **Slow responses**: Completely silent - no logging of the artificial delay
+- **Connection leak**: Silent during leak, INFO level on cleanup
+- **Data corruption**: Silent - no application logs
+- **Random errors**: ERROR level logs for each failed request
 
-This mirrors real-world scenarios where not all issues are explicitly logged.
+This mirrors real-world scenarios where not all issues are explicitly logged at levels visible to standard monitoring.
 
 ### 3. Ask About Real-World Equivalents
 
