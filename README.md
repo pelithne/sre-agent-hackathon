@@ -78,6 +78,6 @@ Each exercise builds on the previous one and includes hands-on scenarios for pra
 ├── exercises/                  # Workshop exercises and setup guides
 ├── infra/                      # Infrastructure as Code (Bicep templates)
 ├── src/api/                    # Sample REST API application
-├── build.sh                    # Container image build script
+├── scripts                     # ENV persistance and API traffic generator etc
 └── README.md                   # This file
 ```
