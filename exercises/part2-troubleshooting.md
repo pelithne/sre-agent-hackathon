@@ -888,7 +888,7 @@ After completing Part 2, you should be able to:
 
 ## What's Next?
 
-**[Part 3: Monitoring & Alerts](./part3-monitoring.md)** - Learn to set up proactive monitoring using the chaos faults to test alert configurations and incident response procedures.
+**[Part 3: Monitoring & Alerts](./part3-incident-response.md)** - Learn to set up proactive monitoring using the chaos faults to test alert configurations and incident response procedures.
 
 ---
 
