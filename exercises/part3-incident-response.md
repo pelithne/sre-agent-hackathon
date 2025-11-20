@@ -28,13 +28,13 @@ verify_vars
 ## Learning Objectives
 
 By the end of this exercise, you will:
-- Configure Azure Monitor metric alerts
-- Set up log-based alerts for error conditions
-- Create availability tests for API endpoints
-- Build monitoring dashboards
-- Use Azure SRE Agent to investigate alert notifications
-- Write comprehensive RCA reports with Azure SRE Agent assistance
-- Implement alert action groups for incident response
+- Configure Azure Monitor metric alerts using percentage-based metrics
+- Create action groups for alert notifications
+- Use Azure Container Apps chaos engineering to test alerts
+- Configure Azure SRE Agent incident response plans
+- Understand Review mode vs. Autonomous mode for agent actions
+- Implement automated incident detection and remediation workflows
+- Monitor and analyze SRE Agent's automated incident response
 
 ---
 
@@ -88,7 +88,7 @@ az monitor metrics alert create \
 ```bash
 # Create Memory alert using percentage (Preview)
 az monitor metrics alert create \
-  --name "High-Memory-Container-App" \
+  --name "High-Memory-Container-App-Percentage" \
   --resource-group $RESOURCE_GROUP \
   --scopes $CONTAINER_APP_ID \
   --condition "avg MemoryPercentage > 80" \
