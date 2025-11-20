@@ -453,6 +453,8 @@ Press `Ctrl+C` to stop following logs.
 
 ## Cleanup (Optional)
 
+> **Important**: Do NOT perform this step if you are planning to move on to Part 2 of the workshop.
+
 If you want to start over or remove all resources:
 
 ```bash
