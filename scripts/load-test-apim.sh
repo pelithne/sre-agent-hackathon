@@ -35,8 +35,8 @@ if [ -z "$APIM_KEY" ]; then
 fi
 
 # Configuration
-RPS=${RPS:-3}              # Requests per second (workshop-appropriate load)
-WORKERS=${WORKERS:-2}      # Number of concurrent workers
+RPS=${RPS:-10}             # Requests per second (workshop-appropriate load)
+WORKERS=${WORKERS:-5}      # Number of concurrent workers
 
 # Colors for output
 RED='\033[0;31m'
@@ -148,7 +148,20 @@ APIM_HEADER="Ocp-Apim-Subscription-Key: $APIM_KEY"
 # Realistic traffic distribution (40% POST, 30% GET list, 20% GET item, 10% DELETE)
 print_info "Starting realistic traffic simulation"
 print_info "Running POST requests (40% of load)..."
-$HEY_CMD -z ${DURATION}s -q $((RPS * 4 / 10)) -c $((WORKERS * 4 / 10 + 1)) \
+
+# Calculate QPS for each request type, ensuring minimum of 1
+POST_QPS=$(( (RPS * 40 + 99) / 100 ))  # Round up: 40% of RPS
+GET_LIST_QPS=$(( (RPS * 30 + 99) / 100 ))  # 30% of RPS
+GET_ITEM_QPS=$(( (RPS * 20 + 99) / 100 ))  # 20% of RPS
+DELETE_QPS=$(( (RPS * 10 + 99) / 100 ))  # 10% of RPS
+
+# Ensure minimum of 1 for each
+POST_QPS=$(( POST_QPS < 1 ? 1 : POST_QPS ))
+GET_LIST_QPS=$(( GET_LIST_QPS < 1 ? 1 : GET_LIST_QPS ))
+GET_ITEM_QPS=$(( GET_ITEM_QPS < 1 ? 1 : GET_ITEM_QPS ))
+DELETE_QPS=$(( DELETE_QPS < 1 ? 1 : DELETE_QPS ))
+
+$HEY_CMD -z ${DURATION}s -q $POST_QPS -c $((WORKERS * 4 / 10 + 1)) \
     -m POST \
     -H "Content-Type: application/json" \
     -H "$APIM_HEADER" \
@@ -157,21 +170,21 @@ $HEY_CMD -z ${DURATION}s -q $((RPS * 4 / 10)) -c $((WORKERS * 4 / 10 + 1)) \
 POST_PID=$!
 
 print_info "Running GET list requests (30% of load)..."
-$HEY_CMD -z ${DURATION}s -q $((RPS * 3 / 10)) -c $((WORKERS * 3 / 10 + 1)) \
+$HEY_CMD -z ${DURATION}s -q $GET_LIST_QPS -c $((WORKERS * 3 / 10 + 1)) \
     -m GET \
     -H "$APIM_HEADER" \
     "$APIM_URL/items" > /tmp/loadtest-apim-get-list.txt &
 GET_LIST_PID=$!
 
 print_info "Running GET item requests (20% of load)..."
-$HEY_CMD -z ${DURATION}s -q $((RPS * 2 / 10)) -c $((WORKERS * 2 / 10 + 1)) \
+$HEY_CMD -z ${DURATION}s -q $GET_ITEM_QPS -c $((WORKERS * 2 / 10 + 1)) \
     -m GET \
     -H "$APIM_HEADER" \
     "$APIM_URL/items/1" > /tmp/loadtest-apim-get-item.txt &
 GET_ITEM_PID=$!
 
 print_info "Running DELETE requests (10% of load)..."
-$HEY_CMD -z ${DURATION}s -q $((RPS * 1 / 10)) -c $((WORKERS * 1 / 10 + 1)) \
+$HEY_CMD -z ${DURATION}s -q $DELETE_QPS -c $((WORKERS * 1 / 10 + 1)) \
     -m DELETE \
     -H "$APIM_HEADER" \
     "$APIM_URL/items/999" > /tmp/loadtest-apim-delete.txt &

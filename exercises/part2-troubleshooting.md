@@ -121,7 +121,7 @@ export PATH=$PATH:~/bin
 The load test script simulates realistic API traffic and should be started **at the beginning of each exercise** (you'll see specific instructions in each exercise below).
 
 When you run the script, it will:
-- Generate **3 requests/second** (workshop-appropriate load)
+- Generate **10 requests/second total** (distributed across request types)
 - Distribute traffic realistically: 40% POST, 30% GET list, 20% GET item, 10% DELETE
 - Run for **15 minutes** by default (safe for Cloud Shell)
 - Display summary statistics when complete
