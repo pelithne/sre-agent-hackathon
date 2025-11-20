@@ -157,6 +157,7 @@ async def chaos_dashboard():
     <html>
     <head>
         <title>Chaos Engineering Dashboard</title>
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔥</text></svg>">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <style>
             * {
@@ -169,7 +170,7 @@ async def chaos_dashboard():
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                 min-height: 100vh;
-                padding: 20px;
+                padding: 15px;
             }
             
             .container {
@@ -180,16 +181,16 @@ async def chaos_dashboard():
             h1 {
                 color: white;
                 text-align: center;
-                margin-bottom: 30px;
-                font-size: 2.5em;
+                margin-bottom: 20px;
+                font-size: 2.2em;
                 text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
             }
             
             .master-controls {
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                padding: 20px;
+                padding: 15px;
                 border-radius: 12px;
-                margin-bottom: 30px;
+                margin-bottom: 20px;
                 display: flex;
                 gap: 15px;
                 justify-content: center;
@@ -217,16 +218,18 @@ async def chaos_dashboard():
             #faults-container {
                 display: grid;
                 grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-                gap: 20px;
-                margin-bottom: 30px;
+                gap: 15px;
+                margin-bottom: 20px;
             }
             
             .fault-card {
                 background: white;
                 border-radius: 12px;
-                padding: 25px;
+                padding: 20px;
                 box-shadow: 0 8px 32px rgba(0,0,0,0.1);
                 transition: transform 0.3s ease, box-shadow 0.3s ease;
+                display: flex;
+                flex-direction: column;
             }
             
             .fault-card:hover {
@@ -243,7 +246,7 @@ async def chaos_dashboard():
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                margin-bottom: 15px;
+                margin-bottom: 12px;
             }
             
             .fault-name {
@@ -271,14 +274,18 @@ async def chaos_dashboard():
             
             .fault-description {
                 color: #666;
-                margin-bottom: 20px;
+                margin-bottom: 15px;
                 line-height: 1.5;
+                min-height: 48px;
+                display: flex;
+                align-items: center;
             }
             
             .controls {
                 display: flex;
                 flex-direction: column;
-                gap: 15px;
+                gap: 12px;
+                margin-top: auto;
             }
             
             .slider-container {
@@ -510,10 +517,23 @@ async def chaos_dashboard():
             async function refreshStatus() {
                 const status = await fetchStatus();
                 const container = document.getElementById('faults-container');
+                
+                // Store current slider values before refresh
+                const currentSliderValues = {};
+                faults.forEach(fault => {
+                    const slider = document.getElementById(`${fault.id}-slider`);
+                    if (slider) {
+                        currentSliderValues[fault.id] = slider.value;
+                    }
+                });
+                
                 container.innerHTML = '';
 
                 faults.forEach(fault => {
                     const state = status[fault.id];
+                    // Use stored slider value if available, otherwise use server state
+                    const sliderValue = currentSliderValues[fault.id] || state.intensity;
+                    
                     const card = document.createElement('div');
                     card.className = `fault-card ${state.enabled ? 'enabled' : ''}`;
                     card.innerHTML = `
@@ -528,14 +548,14 @@ async def chaos_dashboard():
                             <div class="slider-container">
                                 <div class="slider-label">
                                     <span>${fault.sliderLabel}</span>
-                                    <span id="${fault.id}-value">${state.intensity}${fault.sliderUnit}</span>
+                                    <span id="${fault.id}-value">${sliderValue}${fault.sliderUnit}</span>
                                 </div>
                                 <input type="range" 
                                     id="${fault.id}-slider"
                                     min="${fault.sliderMin}" 
                                     max="${fault.sliderMax}" 
                                     step="${fault.sliderStep}"
-                                    value="${state.intensity}"
+                                    value="${sliderValue}"
                                     oninput="document.getElementById('${fault.id}-value').textContent = this.value + '${fault.sliderUnit}'">
                             </div>
                             <div class="action-buttons">
