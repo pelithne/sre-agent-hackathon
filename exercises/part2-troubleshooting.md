@@ -227,6 +227,29 @@ Users are reporting serious API issues: some requests fail completely, others re
 
 ⚠️ **Important**: You must run load tests **before** enabling chaos faults and **before** asking SRE Agent to investigate. This generates the traffic patterns and log entries that SRE Agent will analyze.
 
+#### Install the `hey` Load Testing Tool
+
+If you haven't installed `hey` yet, install it now:
+
+```bash
+# Create ~/bin directory if it doesn't exist
+mkdir -p ~/bin
+
+# Download hey
+wget -O ~/bin/hey https://hey-release.s3.us-east-2.amazonaws.com/hey_linux_amd64
+
+# Make it executable
+chmod +x ~/bin/hey
+
+# Add to PATH for current session
+export PATH="$HOME/bin:$PATH"
+
+# Verify installation
+hey -version
+```
+
+> **Note**: This installation is compatible with Azure Cloud Shell and doesn't require sudo privileges.
+
 ### Step 1: Start Load Testing
 
 Before introducing any faults, start a 15-minute load test to establish baseline traffic:
@@ -235,8 +258,6 @@ Before introducing any faults, start a 15-minute load test to establish baseline
 # Start load test (runs in background for 15 minutes)
 ./scripts/load-test-apim.sh --duration 900 --rps 10 &
 
-# Save the process ID
-LOAD_TEST_PID=$!
 # Save the process ID
 LOAD_TEST_PID=$!
 ```
