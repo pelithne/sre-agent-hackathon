@@ -50,12 +50,22 @@ echo ""
 
 # Check if hey is installed
 if ! command -v hey &> /dev/null; then
-    print_warn "'hey' is not installed. Attempting to use docker version..."
-    HEY_CMD="docker run --rm williamyeh/hey"
-else
-    HEY_CMD="hey"
-    print_info "Using local 'hey' installation"
+    print_error "'hey' is not installed"
+    echo ""
+    echo "To install 'hey':"
+    echo "  wget https://hey-release.s3.us-east-2.amazonaws.com/hey_linux_amd64"
+    echo "  chmod +x hey_linux_amd64"
+    echo "  mkdir -p ~/bin"
+    echo "  mv hey_linux_amd64 ~/bin/hey"
+    echo "  export PATH=\$PATH:~/bin"
+    echo ""
+    echo "Note: You may need to run 'export PATH=\$PATH:~/bin' in your current shell"
+    echo ""
+    exit 1
 fi
+
+HEY_CMD="hey"
+print_info "Using 'hey' for load testing"
 
 # Test 1: POST /items (Create items)
 print_info "Test 1/4: Creating items (POST /items)"

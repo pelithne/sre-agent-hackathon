@@ -13,25 +13,41 @@ The load testing approach uses external CLI tools to generate HTTP traffic **out
 
 ## Prerequisites
 
-### Option 1: Install `hey` locally (recommended)
+You need to install `hey` (HTTP load generator) from the official repository: https://github.com/rakyll/hey
+
+### Installation (Azure Cloud Shell or any Linux environment)
+
+```bash
+# Download pre-built binary
+wget https://hey-release.s3.us-east-2.amazonaws.com/hey_linux_amd64
+
+# Make it executable
+chmod +x hey_linux_amd64
+
+# Create ~/bin directory and move hey there
+mkdir -p ~/bin
+mv hey_linux_amd64 ~/bin/hey
+
+# Add to PATH (add this to your ~/.bashrc or ~/.zshrc to make it permanent)
+export PATH=$PATH:~/bin
+
+# Verify installation
+hey -version
+```
+
+**Note:** The `hey` binary is from the official repository: https://github.com/rakyll/hey
+
+### Other Platforms
 
 ```bash
 # macOS
 brew install hey
 
-# Linux (requires Go)
+# Linux/WSL with Go installed
 go install github.com/rakyll/hey@latest
 
-# Windows (requires Go)
+# Windows with Go installed
 go install github.com/rakyll/hey@latest
-```
-
-### Option 2: Use Docker
-
-If you don't want to install `hey` locally, the scripts will automatically fall back to using a Docker container:
-
-```bash
-docker pull williamyeh/hey
 ```
 
 ## Scripts
