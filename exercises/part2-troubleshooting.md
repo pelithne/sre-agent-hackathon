@@ -225,11 +225,9 @@ Users are reporting serious API issues: some requests fail completely, others re
 
 ### Prerequisites for This Exercise
 
-⚠️ **Important**: You must run load tests **before** enabling chaos faults and **before** asking SRE Agent to investigate. This generates the traffic patterns and log entries that SRE Agent will analyze.
-
 #### Install the `hey` Load Testing Tool
 
-If you haven't installed `hey` yet, install it now:
+If you haven't installed `hey` yet, install it now. The instruction below installs the tool in "your own" bin directory. This is so that it will work in **Azure Cloud Shell**.
 
 ```bash
 # Create ~/bin directory if it doesn't exist
