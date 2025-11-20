@@ -8,7 +8,7 @@ These advanced exercises are designed for experienced SREs who want to explore m
 
 ## Prerequisites
 
-- Completed [Part 1: Setup](./part1-setup.md), [Part 2: Troubleshooting](./part2-troubleshooting.md), and [Part 3: Monitoring](./part3-monitoring.md)
+- Completed [Part 1: Setup](./part1-setup.md), [Part 2: Troubleshooting](./part2-troubleshooting.md), and [Part 3: Incident Response](./part3-incident-response.md)
 - Comfortable with Azure CLI, KQL, and infrastructure automation
 - Understanding of SRE principles and practices
 
