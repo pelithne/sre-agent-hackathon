@@ -419,6 +419,10 @@ echo "Application Insights App ID: $APP_INSIGHTS_NAME"
 # Query Application Insights using CLI
 echo ""
 echo "Querying Application Insights via CLI..."
+
+# Note: In Azure Cloud Shell, you may need to authenticate with a special scope first:
+# az login --scope "https://api.applicationinsights.io/.default"
+
 az monitor app-insights query \
   --apps $APP_INSIGHTS_NAME \
   --resource-group $RESOURCE_GROUP \
@@ -427,16 +431,9 @@ az monitor app-insights query \
   | column -t -s $'\t'
 ```
 
-> **Note**: 
-> - **APIM telemetry can take 5-10 minutes to appear** - this is normal for APIM Consumption tier
-> - If the CLI query returns no results after waiting, telemetry may still be ingesting
-> - **Alternative: Query in Azure Portal**:
->   1. Navigate to: https://portal.azure.com
->   2. Go to Resource Groups → your resource group
->   3. Click on Application Insights resource
->   4. In the left menu, click **Logs** under Monitoring
->   5. Run: `requests | where timestamp > ago(1h) | take 10`
-> - **Check Live Metrics**: View real-time telemetry while making API requests
+> **Note:** If you see an error about "Audience https://api.applicationinsights.io is not a supported MSI token audience" in Cloud Shell, this is a known authentication limitation. You can either:
+> 1. Run `az login --scope "https://api.applicationinsights.io/.default"` first, or
+> 2. Skip this CLI query and use the Azure Portal to view Application Insights data instead
 
 ### Check Container App Logs
 

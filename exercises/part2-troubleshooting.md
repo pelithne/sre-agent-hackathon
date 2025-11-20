@@ -151,8 +151,10 @@ az monitor metrics list \
   --metric "UsageNanoCores" \
   --start-time $(date -u -d '10 minutes ago' '+%Y-%m-%dT%H:%M:%S') \
   --interval PT1M \
-  --query 'value[0].timeseries[0].data[-5:].[timeStamp,average]' \
-  --output table
+  --query 'value[0].timeseries[0].data[-5:]' \
+  --output json \
+  | jq -r '["TIMESTAMP","CPU_NANOCORES"], ["----------","-------------"], (.[] | [.timeStamp, (.average // 0 | round)]) | @tsv' \
+  | column -t -s $'\t'
 ```
 
 ### Step 3: Investigate with SRE Agent
