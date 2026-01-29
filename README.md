@@ -70,14 +70,4 @@ Ready to master the Azure SRE Agent? Follow the workshop exercises in order:
 2. **[Part 2: Troubleshooting](exercises/part2-troubleshooting.md)** - Learn SRE Agent basics
 3. **[Part 3: Incident Response](exercises/part3-incident-response.md)** - Advanced SRE practices
 
-Each exercise builds on the previous one and includes hands-on scenarios for practicing real-world SRE skills.
-
-## Repository Structure
-
-```
-├── exercises/                  # Workshop exercises and setup guides
-├── infra/                      # Infrastructure as Code (Bicep templates)
-├── src/api/                    # Sample REST API application
-├── scripts                     # ENV persistance and API traffic generator etc
-└── README.md                   # This file
-```
+Each exercise builds on the previous one and includes hands-on scenarios for practicing real-world SRE Agent skills.
