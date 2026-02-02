@@ -69,5 +69,6 @@ Ready to master the Azure SRE Agent? Follow the workshop exercises in order:
 1. **[Part 1: Setup](exercises/part1-setup.md)** - Deploy your troubleshooting environment
 2. **[Part 2: Troubleshooting](exercises/part2-troubleshooting.md)** - Learn SRE Agent basics
 3. **[Part 3: Incident Response](exercises/part3-incident-response.md)** - Advanced SRE practices
+4. TODO: Root Cause Analysis and git integration
 
 Each exercise builds on the previous one and includes hands-on scenarios for practicing real-world SRE Agent skills.
