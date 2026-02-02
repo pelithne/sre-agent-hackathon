@@ -106,7 +106,7 @@ CONTAINER_APP_URL=$(az containerapp show \
 echo "Chaos Dashboard: https://${CONTAINER_APP_URL}/admin/chaos"
 ```
 
-Open this URL in your browser. You'll see the 🔥 Chaos Engineering Dashboard with fault types including:
+Open this URL in your browser. You'll see the Chaos Engineering Dashboard with fault types including:
 - Memory Leak
 - CPU Spike
 - Slow Responses
