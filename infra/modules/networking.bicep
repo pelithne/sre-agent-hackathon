@@ -53,7 +53,14 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-11-01' = {
         name: 'container-apps-subnet'
         properties: {
           addressPrefix: networkConfig.containerAppsSubnetPrefix
-          // Container Apps manages its own resources, no delegation needed
+          delegations: [
+            {
+              name: 'Microsoft.App.environments'
+              properties: {
+                serviceName: 'Microsoft.App/environments'
+              }
+            }
+          ]
         }
       }
       {
